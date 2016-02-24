@@ -214,22 +214,45 @@ extern pmix_data_type_t pmix_bfrop_num_reg_types;
         ++pmix_bfrop_num_reg_types;                                     \
     } while(0);
 
+/**
+ * BFROP initialization function.
+ *
+ * In dynamic libraries, declared objects and functions don't get
+ * loaded until called. We need to ensure that the pmix_bfrop function
+ * structure gets loaded, so we provide an "open" call that is
+ * executed as part of the program startup.
+ */
+PMIX_DECLSPEC pmix_status_t pmix_bfrop_open(void);
+
+/**
+ * BFROP finalize function
+ */
+PMIX_DECLSPEC pmix_status_t pmix_bfrop_close(void);
+
+/**
+ * BFROP select function
+ *
+ * Cycle across available components and construct the list
+ * of active modules
+ */
+ PMIX_DECLSPEC pmix_status_t pmix_bfrop_select(void);
+
 /*
  * Implementations of API functions
  */
 
-int pmix_bfrop_pack(pmix_buffer_t *buffer, const void *src,
-                  int32_t num_vals,
-                  pmix_data_type_t type);
-int pmix_bfrop_unpack(pmix_buffer_t *buffer, void *dest,
-                    int32_t *max_num_vals,
-                    pmix_data_type_t type);
+int pmix_bfrop_base_pack(pmix_buffer_t *buffer, const void *src,
+                         int32_t num_vals,
+                         pmix_data_type_t type);
+int pmix_bfrop_base_unpack(pmix_buffer_t *buffer, void *dest,
+                           int32_t *max_num_vals,
+                           pmix_data_type_t type);
 
-int pmix_bfrop_copy(void **dest, void *src, pmix_data_type_t type);
+int pmix_bfrop_base_copy(void **dest, void *src, pmix_data_type_t type);
 
-int pmix_bfrop_print(char **output, char *prefix, void *src, pmix_data_type_t type);
+int pmix_bfrop_base_print(char **output, char *prefix, void *src, pmix_data_type_t type);
 
-int pmix_bfrop_copy_payload(pmix_buffer_t *dest, pmix_buffer_t *src);
+int pmix_bfrop_base_copy_payload(pmix_buffer_t *dest, pmix_buffer_t *src);
 
 /*
  * Specialized functions
@@ -458,15 +481,15 @@ int pmix_bfrop_print_pdata(char **output, char *prefix,
  * Internal helper functions
  */
 
-char* pmix_bfrop_buffer_extend(pmix_buffer_t *bptr, size_t bytes_to_add);
+char* pmix_bfrop_base_buffer_extend(pmix_buffer_t *bptr, size_t bytes_to_add);
 
-bool pmix_bfrop_too_small(pmix_buffer_t *buffer, size_t bytes_reqd);
+bool pmix_bfrop_base_too_small(pmix_buffer_t *buffer, size_t bytes_reqd);
 
-pmix_bfrop_type_info_t* pmix_bfrop_find_type(pmix_data_type_t type);
+pmix_bfrop_type_info_t* pmix_bfrop_base_find_type(pmix_data_type_t type);
 
-int pmix_bfrop_store_data_type(pmix_buffer_t *buffer, pmix_data_type_t type);
+int pmix_bfrop_base_store_data_type(pmix_buffer_t *buffer, pmix_data_type_t type);
 
-pmix_status_t pmix_bfrop_get_data_type(pmix_buffer_t *buffer, pmix_data_type_t *type);
+pmix_status_t pmix_bfrop_base_get_data_type(pmix_buffer_t *buffer, pmix_data_type_t *type);
 
 END_C_DECLS
 

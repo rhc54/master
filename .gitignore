@@ -38,6 +38,7 @@ config.out
 dist.out
 
 config/ar-lib
+config/autogen_found_items.m4
 config/compile
 config/config.guess
 config/config.sub

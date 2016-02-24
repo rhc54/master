@@ -11,7 +11,7 @@
  * Copyright (c) 2004-2005 The Regents of the University of California.
  *                         All rights reserved.
  * Copyright (c) 2012      Los Alamos National Security, Inc. All rights reserved.
- * Copyright (c) 2013-2015 Intel, Inc. All rights reserved
+ * Copyright (c) 2013-2016 Intel, Inc. All rights reserved
  * Copyright (c) 2015      Research Organization for Information Science
  *                         and Technology (RIST). All rights reserved.
  * $COPYRIGHT$
@@ -34,19 +34,9 @@
 #include <private/types.h>
 
 #include "src/include/pmix_globals.h"
-#include "src/buffer_ops/types.h"
+#include "bfrops_types.h"
 
 BEGIN_C_DECLS
-
-/* internally used object for transferring data
- * to/from the server and for storing in the
- * hash tables */
-typedef struct {
-    pmix_list_item_t super;
-    char *key;
-    pmix_value_t *value;
-} pmix_kval_t;
-PMIX_CLASS_DECLARATION(pmix_kval_t);
 
 /* A non-API function for something that happens in a number
  * of places throughout the code base - transferring a value to
@@ -246,22 +236,6 @@ typedef pmix_status_t (*pmix_bfrop_unpack_fn_t)(pmix_buffer_t *buffer, void *des
  */
 typedef pmix_status_t (*pmix_bfrop_copy_payload_fn_t)(pmix_buffer_t *dest,
                                                       pmix_buffer_t *src);
-
-/**
- * BFROP initialization function.
- *
- * In dynamic libraries, declared objects and functions don't get
- * loaded until called. We need to ensure that the pmix_bfrop function
- * structure gets loaded, so we provide an "open" call that is
- * executed as part of the program startup.
- */
-PMIX_DECLSPEC pmix_status_t pmix_bfrop_open(void);
-
-/**
- * BFROP finalize function
- */
-PMIX_DECLSPEC pmix_status_t pmix_bfrop_close(void);
-
 
 /**
  * Copy a data value from one location to another.

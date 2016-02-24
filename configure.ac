@@ -32,6 +32,9 @@
 # Initialization, version number, and other random setup/init stuff
 ############################################################################
 
+# Load in everything found by autogen.pl
+m4_include([config/autogen_found_items.m4])
+
 AC_INIT([pmix],
         [m4_normalize(esyscmd([config/pmix_get_version.sh VERSION --tarball]))],
         [http://www.open-mpi.org/projects/pmix/], [pmix])

@@ -80,6 +80,16 @@ typedef struct {
 } pmix_buffer_t;
 PMIX_DECLSPEC PMIX_CLASS_DECLARATION (pmix_buffer_t);
 
+/* internally used object for transferring data
+ * to/from the server and for storing in the
+ * hash tables */
+typedef struct {
+    pmix_list_item_t super;
+    char *key;
+    pmix_value_t *value;
+} pmix_kval_t;
+PMIX_CLASS_DECLARATION(pmix_kval_t);
+
 /* these classes are required by the regex code shared
  * between the client and server implementations - it
  * is put here so that both can access these objects */

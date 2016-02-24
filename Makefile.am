@@ -11,7 +11,7 @@
 #                         All rights reserved.
 # Copyright (c) 2006-2015 Cisco Systems, Inc.  All rights reserved.
 # Copyright (c) 2012-2013 Los Alamos National Security, Inc.  All rights reserved.
-# Copyright (c) 2013-2015 Intel, Inc. All rights reserved
+# Copyright (c) 2013-2016 Intel, Inc. All rights reserved
 # $COPYRIGHT$
 #
 # Additional copyrights may follow
@@ -22,6 +22,21 @@
 # Note that the -I directory must *exactly* match what was specified
 # via AC_CONFIG_MACRO_DIR in configure.ac.
 ACLOCAL_AMFLAGS = -I ./config
+
+SUBDIRS = \
+    src/mca/base \
+    src/$(MCA_pmix_FRAMEWORKS_SUBDIRS) \
+    src/$(MCA_pmix_FRAMEWORK_COMPONENT_STATIC_SUBDIRS) \
+    src \
+    src/$(MCA_pmix_FRAMEWORK_COMPONENT_DSO_SUBDIRS)
+
+# libltdl is included by variable because if --disable-dlopen was
+# used, there will be no generated Makefile in that directory (and
+# therefore make distclean will fail).
+DIST_SUBDIRS = \
+    src/mca/base \
+    src/$(MCA_pmix_FRAMEWORKS_SUBDIRS) \
+    src/$(MCA_pmix_FRAMEWORK_COMPONENT_ALL_SUBDIRS)
 
 headers =
 sources =
@@ -35,21 +50,11 @@ if ! PMIX_EMBEDDED_MODE
 dist_pmixdata_DATA += contrib/pmix-valgrind.supp
 endif
 
-man_MANS = \
-        man/man3/pmix_init.3 \
-        man/man3/pmix_finalize.3 \
-        man/man3/pmix_initialized.3 \
-        man/man3/pmix_abort.3 \
-        man/man3/pmix_put.3 \
-        man/man3/pmix_commit.3 \
-        man/man7/pmix.7 \
-        man/man7/pmix_constants.7
-
 include config/Makefile.am
 include include/Makefile.am
 include src/class/Makefile.am
 include src/include/Makefile.am
-include src/buffer_ops/Makefile.am
+include src/mca/Makefile.am
 include src/util/Makefile.am
 include src/usock/Makefile.am
 include src/client/Makefile.am
@@ -66,15 +71,28 @@ if PMIX_EMBEDDED_MODE
 noinst_LTLIBRARIES = libpmix.la
 libpmix_la_SOURCES = $(headers) $(sources)
 libpmix_la_LDFLAGS =
+
 else
+
 lib_LTLIBRARIES = libpmix.la
 libpmix_la_SOURCES = $(headers) $(sources)
 libpmix_la_LDFLAGS = -version-info $(libpmix_so_version)
+
+man_MANS = \
+        man/man3/pmix_init.3 \
+        man/man3/pmix_finalize.3 \
+        man/man3/pmix_initialized.3 \
+        man/man3/pmix_abort.3 \
+        man/man3/pmix_put.3 \
+        man/man3/pmix_commit.3 \
+        man/man7/pmix.7 \
+        man/man7/pmix_constants.7
+
 endif
 
 
 if ! PMIX_EMBEDDED_MODE
-SUBDIRS = . test examples
+SUBDIRS += . test examples
 pmixdir = $(pmixincludedir)/$(subdir)
 nobase_pmix_HEADERS = $(headers)
 endif

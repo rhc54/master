@@ -561,6 +561,18 @@ AC_DEFUN([PMIX_SETUP_CORE],[
 
     PMIX_MUNGE_CONFIG
 
+    ##################################
+    # MCA
+    ##################################
+
+    opal_show_title "Modular Component Architecture (MCA) setup"
+
+    AC_MSG_CHECKING([for subdir args])
+    PMIX_CONFIG_SUBDIR_ARGS([pmix_subdir_args])
+    AC_MSG_RESULT([$pmix_subdir_args])
+
+    PMIX_MCA
+
     ############################################################################
     # final compiler config
     ############################################################################
