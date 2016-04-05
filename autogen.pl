@@ -829,11 +829,6 @@ open(M4, ">$m4_output_file") ||
 print M4 $m4;
 close(M4);
 
-# Generate the version checking script with autom4te
-#verbose "==> Generating pmix_get_version.sh\n";
-#chdir("config");
-#safe_system("autom4te --language=m4sh pmix_get_version.m4sh -o pmix_get_version.sh");
-
 # Run autoreconf
 verbose "==> Running autoreconf\n";
 my $cmd = "autoreconf -ivf --warnings=all,no-obsolete,no-override -I config";
