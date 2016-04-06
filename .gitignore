@@ -60,6 +60,8 @@ examples/server
 include/private/autogen/config.h.in
 include/private/autogen/config.h.in~
 
+src/mca/*/base/static-components.h
+
 test/pmi2_client
 test/pmi_client
 test/pmix_client
