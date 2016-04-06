@@ -780,6 +780,22 @@ fi
 AC_DEFINE_UNQUOTED([PMIX_ENABLE_TIMING], [$WANT_TIMING],
                    [Whether we want developer-level timing support or not])
 
+#
+# Install header files
+#
+AC_MSG_CHECKING([if want to head developer-level header files])
+AC_ARG_WITH(devel-headers,
+              AC_HELP_STRING([--with-devel-headers],
+                             [also install developer-level header files (only for internal PMIx developers, default: disabled)]))
+if test "$with_devel_headers" = "yes"; then
+    AC_MSG_RESULT([yes])
+    WANT_INSTALL_HEADERS=1
+else
+    AC_MSG_RESULT([no])
+    WANT_INSTALL_HEADERS=0
+fi
+
+AM_CONDITIONAL([WANT_INSTALL_HEADERS], [test $WANT_INSTALL_HEADERS -eq 1])
 ])dnl
 
 # Specify the symbol prefix
