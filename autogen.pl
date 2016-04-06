@@ -834,8 +834,6 @@ verbose "==> Running autoreconf\n";
 my $cmd = "autoreconf -ivf --warnings=all,no-obsolete,no-override -I config";
 safe_system($cmd);
 
-patch_autotools_output(".");
-
 #---------------------------------------------------------------------------
 
 verbose "
