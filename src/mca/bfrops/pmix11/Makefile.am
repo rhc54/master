@@ -30,13 +30,13 @@ sources = \
 # mca_<type>_<name>.la (for DSO builds) or libmca_<type>_<name>.la
 # (for static builds).
 
-if MCA_BUILD_pmix_bfrops_pmix11_DSO
+if MCA_BUILD_src_bfrops_pmix11_DSO
 lib =
 lib_sources =
-component = mca_pmix_bfrops_pmix11.la
+component = mca_src_bfrops_pmix11.la
 component_sources = $(sources)
 else
-lib = libmca_pmix_bfrops_pmix11.la
+lib = libmca_src_bfrops_pmix11.la
 lib_sources = $(sources)
 component =
 component_sources =
@@ -44,9 +44,9 @@ endif
 
 mcacomponentdir = $(pmixlibdir)
 mcacomponent_LTLIBRARIES = $(component)
-mca_pmix_bfrops_pmix11_la_SOURCES = $(component_sources)
-mca_pmix_bfrops_pmix11_la_LDFLAGS = -module -avoid-version
+mca_src_bfrops_pmix11_la_SOURCES = $(component_sources)
+mca_src_bfrops_pmix11_la_LDFLAGS = -module -avoid-version
 
 noinst_LTLIBRARIES = $(lib)
-libmca_pmix_bfrops_pmix11_la_SOURCES = $(lib_sources)
-libmca_pmix_bfrops_pmix11_la_LDFLAGS = -module -avoid-version
+libmca_src_bfrops_pmix11_la_SOURCES = $(lib_sources)
+libmca_src_bfrops_pmix11_la_LDFLAGS = -module -avoid-version
