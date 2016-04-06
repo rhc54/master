@@ -161,7 +161,7 @@ AS_IF([test "$pmix_debug" = "1"],
 ############################################################################
 
 # Setup the pmix core
-PMIX_SETUP_CORE([])
+PMIX_SETUP_CORE()
 
 # Run the AM_CONDITIONALs
 PMIX_DO_AM_CONDITIONALS

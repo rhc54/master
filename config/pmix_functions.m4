@@ -79,6 +79,15 @@ EOF
   PMIX_LOG_MSG([--- ${1}], 1)
 }
 
+pmix_show_verbose() {
+  if test "$V" = "1"; then
+      cat <<EOF
++++ VERBOSE: ${1}
+EOF
+      PMIX_LOG_MSG([--- ${1}], 1)
+  fi
+}
+
 #
 # Save some stats about this build
 #
@@ -341,6 +350,35 @@ for arg in $2; do
     fi
 done
 unset pmix_found
+])
+
+dnl #######################################################################
+dnl #######################################################################
+dnl #######################################################################
+
+# OPAL_FLAGS_APPEND_UNIQ(variable, new_argument)
+# ----------------------------------------------
+# Append new_argument to variable if:
+#
+# - the argument does not begin with -I, -L, or -l, or
+# - the argument begins with -I, -L, or -l, and it's not already in variable
+#
+# This macro assumes a space seperated list.
+AC_DEFUN([PMIX_FLAGS_APPEND_UNIQ], [
+    PMIX_VAR_SCOPE_PUSH([opal_tmp opal_append])
+
+    for arg in $2; do
+        opal_tmp=`echo $arg | cut -c1-2`
+        opal_append=1
+        AS_IF([test "$opal_tmp" = "-I" || test "$opal_tmp" = "-L" || test "$opal_tmp" = "-l"],
+              [for val in ${$1}; do
+                   AS_IF([test "x$val" = "x$arg"], [opal_append=0])
+               done])
+        AS_IF([test "$opal_append" = "1"],
+              [AS_IF([test -z "$$1"], [$1=$arg], [$1="$$1 $arg"])])
+    done
+
+    PMIX_VAR_SCOPE_POP
 ])
 
 dnl #######################################################################

@@ -565,7 +565,7 @@ AC_DEFUN([PMIX_SETUP_CORE],[
     # MCA
     ##################################
 
-    opal_show_title "Modular Component Architecture (MCA) setup"
+    pmix_show_title "Modular Component Architecture (MCA) setup"
 
     AC_MSG_CHECKING([for subdir args])
     PMIX_CONFIG_SUBDIR_ARGS([pmix_subdir_args])
@@ -619,6 +619,7 @@ AC_DEFUN([PMIX_SETUP_CORE],[
         pmix_config_prefix[config/Makefile]
         pmix_config_prefix[include/Makefile]
         pmix_config_prefix[src/Makefile]
+        pmix_config_prefix[src/mca/base/Makefile]
         )
 
     # Success

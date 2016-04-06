@@ -40,4 +40,4 @@ include base/Makefile.include
 libmca_bfrops_la_SOURCES += $(headers) $(sources)
 
 distclean-local:
-    rm -f base/static-components.h
+	rm -f base/static-components.h

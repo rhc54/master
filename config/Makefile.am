@@ -40,6 +40,7 @@ EXTRA_DIST = \
 	pmix_check_sasl.m4 \
 	pmix_check_vendor.m4 \
 	pmix_check_visibility.m4 \
+        pmix_config_subdir.m4 \
 	pmix_ensure_contains_optflags.m4 \
 	pmix_functions.m4 \
 	pmix.m4 \
