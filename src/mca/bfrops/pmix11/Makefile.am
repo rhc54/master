@@ -19,9 +19,6 @@
 # $HEADER$
 #
 
-# This makefile.am does not stand on its own - it is included from
-# src/Makefile.am
-
 headers =
 sources = \
         copy.c \

@@ -40,19 +40,19 @@ sources =
 nodist_headers =
 EXTRA_DIST =
 
-include class/Makefile.am
-include include/Makefile.am
-include mca/Makefile.am
-include util/Makefile.am
-include usock/Makefile.am
-include client/Makefile.am
-include server/Makefile.am
-include sec/Makefile.am
-include common/Makefile.am
+include class/Makefile.include
+include include/Makefile.include
+include mca/Makefile.include
+include util/Makefile.include
+include usock/Makefile.include
+include client/Makefile.include
+include server/Makefile.include
+include sec/Makefile.include
+include common/Makefile.include
 
 if WANT_DSTORE
-include sm/Makefile.am
-include dstore/Makefile.am
+include sm/Makefile.include
+include dstore/Makefile.include
 endif
 
 if PMIX_EMBEDDED_MODE

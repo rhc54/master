@@ -35,7 +35,7 @@ pmixdir = $(pmixincludedir)/$(subdir)
 nobase_pmix_HEADERS = $(headers)
 endif
 
-include base/Makefile.am
+include base/Makefile.include
 
 libmca_bfrops_la_SOURCES += $(headers) $(sources)
 
