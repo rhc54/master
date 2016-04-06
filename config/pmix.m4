@@ -614,7 +614,12 @@ AC_DEFUN([PMIX_SETUP_CORE],[
 
     pmix_show_subtitle "Final output"
 
-    AC_CONFIG_FILES(pmix_config_prefix[Makefile])
+    AC_CONFIG_FILES(
+        pmix_config_prefix[Makefile]
+        pmix_config_prefix[config/Makefile]
+        pmix_config_prefix[include/Makefile]
+        pmix_config_prefix[src/Makefile]
+        )
 
     # Success
     $2

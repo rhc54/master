@@ -19,32 +19,24 @@
 # $HEADER$
 #
 
-# Note that the -I directory must *exactly* match what was specified
-# via AC_CONFIG_MACRO_DIR in configure.ac.
-ACLOCAL_AMFLAGS = -I ./config
+if !PMIX_EMBEDDED_MODE
 
-SUBDIRS = config include src man test
-headers =
-sources =
-nodist_headers =
-EXTRA_DIST = AUTHORS README INSTALL VERSION LICENSE autogen.sh
+man_MANS = \
+        man/man3/pmix_init.3 \
+        man/man3/pmix_finalize.3 \
+        man/man3/pmix_initialized.3 \
+        man/man3/pmix_abort.3 \
+        man/man3/pmix_put.3 \
+        man/man3/pmix_commit.3 \
+        man/man7/pmix.7 \
+        man/man7/pmix_constants.7
 
-# Only install the valgrind suppressions file if we're building in
-# standalone mode
-dist_pmixdata_DATA =
-if ! PMIX_EMBEDDED_MODE
-dist_pmixdata_DATA += contrib/pmix-valgrind.supp
-endif
-
-if ! PMIX_EMBEDDED_MODE
-SUBDIRS += . test examples
-pmixdir = $(pmixincludedir)/$(subdir)
-nobase_pmix_HEADERS = $(headers)
-endif
+EXTRA_DIST = $(man_MANS)
 
 nroff:
-	(cd man; $(MAKE) nroff)
+	@for file in $(man_MANS); do \
+	    source=`echo $$file | sed -e 's@/man[0-9]@@'`; \
+	    $(top_srcdir)contrib/md2nroff.pl --source=$$source.md; \
+	done
 
-dist-hook:
-	env LS_COLORS= sh "$(top_srcdir)/config/distscript.sh" "$(top_srcdir)" "$(distdir)" "$(PMIX_VERSION)" "$(PMIX_REPO_REV)"
-
+endif # !PMIX_EMBEDDED_MODE

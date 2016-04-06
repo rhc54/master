@@ -23,28 +23,47 @@
 # via AC_CONFIG_MACRO_DIR in configure.ac.
 ACLOCAL_AMFLAGS = -I ./config
 
-SUBDIRS = config include src man test
+SUBDIRS = \
+    mca/base \
+    $(MCA_src_FRAMEWORKS_SUBDIRS) \
+    $(MCA_src_FRAMEWORK_COMPONENT_STATIC_SUBDIRS) \
+    . \
+    $(MCA_src_FRAMEWORK_COMPONENT_DSO_SUBDIRS)
+
+DIST_SUBDIRS = \
+    mca/base \
+    $(MCA_src_FRAMEWORKS_SUBDIRS) \
+    $(MCA_src_FRAMEWORK_COMPONENT_ALL_SUBDIRS)
+
 headers =
 sources =
 nodist_headers =
-EXTRA_DIST = AUTHORS README INSTALL VERSION LICENSE autogen.sh
+EXTRA_DIST =
 
-# Only install the valgrind suppressions file if we're building in
-# standalone mode
-dist_pmixdata_DATA =
-if ! PMIX_EMBEDDED_MODE
-dist_pmixdata_DATA += contrib/pmix-valgrind.supp
+include class/Makefile.am
+include include/Makefile.am
+include mca/Makefile.am
+include util/Makefile.am
+include usock/Makefile.am
+include client/Makefile.am
+include server/Makefile.am
+include sec/Makefile.am
+include common/Makefile.am
+
+if WANT_DSTORE
+include sm/Makefile.am
+include dstore/Makefile.am
 endif
 
-if ! PMIX_EMBEDDED_MODE
-SUBDIRS += . test examples
-pmixdir = $(pmixincludedir)/$(subdir)
-nobase_pmix_HEADERS = $(headers)
-endif
+if PMIX_EMBEDDED_MODE
+noinst_LTLIBRARIES = libpmix.la
+libpmix_la_SOURCES = $(headers) $(sources)
+libpmix_la_LDFLAGS =
 
-nroff:
-	(cd man; $(MAKE) nroff)
+else
 
-dist-hook:
-	env LS_COLORS= sh "$(top_srcdir)/config/distscript.sh" "$(top_srcdir)" "$(distdir)" "$(PMIX_VERSION)" "$(PMIX_REPO_REV)"
+lib_LTLIBRARIES = libpmix.la
+libpmix_la_SOURCES = $(headers) $(sources)
+libpmix_la_LDFLAGS = -version-info $(libpmix_so_version)
 
+endif !PMIX_EMBEDDED_MODE
