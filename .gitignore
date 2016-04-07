@@ -38,6 +38,7 @@ config.out
 dist.out
 
 config/ar-lib
+config/autogen_found_items.m4
 config/compile
 config/config.guess
 config/config.sub
@@ -58,6 +59,8 @@ examples/server
 
 src/include/private/autogen/config.h.in
 src/include/private/autogen/config.h.in~
+
+src/mca/*/base/static-components.h
 
 test/pmi2_client
 test/pmi_client
