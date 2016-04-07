@@ -19,18 +19,34 @@
 # $HEADER$
 #
 
-# This makefile.am does not stand on its own - it is included from
-# src/Makefile.am
+headers =
+sources = \
+        copy.c \
+        pack.c \
+        print.c \
+        unpack.c
 
-headers += \
-         src/buffer_ops/buffer_ops.h \
-         src/buffer_ops/types.h \
-         src/buffer_ops/internal.h
+# Make the output library in this directory, and name it either
+# mca_<type>_<name>.la (for DSO builds) or libmca_<type>_<name>.la
+# (for static builds).
 
-sources += \
-        src/buffer_ops/copy.c \
-        src/buffer_ops/internal_functions.c \
-        src/buffer_ops/open_close.c \
-        src/buffer_ops/pack.c \
-        src/buffer_ops/print.c \
-        src/buffer_ops/unpack.c
+if MCA_BUILD_src_bfrops_pmix11_DSO
+lib =
+lib_sources =
+component = mca_src_bfrops_pmix11.la
+component_sources = $(sources)
+else
+lib = libmca_src_bfrops_pmix11.la
+lib_sources = $(sources)
+component =
+component_sources =
+endif
+
+mcacomponentdir = $(pmixlibdir)
+mcacomponent_LTLIBRARIES = $(component)
+mca_src_bfrops_pmix11_la_SOURCES = $(component_sources)
+mca_src_bfrops_pmix11_la_LDFLAGS = -module -avoid-version
+
+noinst_LTLIBRARIES = $(lib)
+libmca_src_bfrops_pmix11_la_SOURCES = $(lib_sources)
+libmca_src_bfrops_pmix11_la_LDFLAGS = -module -avoid-version

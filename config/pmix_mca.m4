@@ -216,8 +216,9 @@ AC_DEFUN([PMIX_MCA],[
 
     # now configure all the projects, frameworks, and components.  Most
     # of the hard stuff is in here
-    MCA_PROJECT_SUBDIRS="src"
-    MCA_CONFIGURE_PROJECT(pmix)
+    MCA_PROJECT_SUBDIRS=
+    m4_foreach(mca_project, [mca_project_list],
+               [MCA_CONFIGURE_PROJECT(mca_project)])
 
     AC_SUBST(MCA_PROJECT_SUBDIRS)
 
@@ -229,12 +230,12 @@ AC_DEFUN([PMIX_MCA],[
 # MCA_CONFIGURE_PROJECT
 #
 # Configure all frameworks inside the given project name.  Assumes that
-# the frameworks are located in [project_name]/mca/[frameworks] and that
+# the frameworks are located in [project_dir]/mca/[frameworks] and that
 # there is an m4_defined list named mca_[project]_framework_list with
 # the list of frameworks.
 #
 # USAGE:
-#   MCA_CONFIGURE_PROJECT(project_name)
+#   MCA_CONFIGURE_PROJECT(project_dir (1))
 #
 ######################################################################
 AC_DEFUN([MCA_CONFIGURE_PROJECT],[

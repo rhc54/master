@@ -10,7 +10,7 @@
 #                         University of Stuttgart.  All rights reserved.
 # Copyright (c) 2004-2005 The Regents of the University of California.
 #                         All rights reserved.
-# Copyright (c) 2006-2015 Cisco Systems, Inc.  All rights reserved.
+# Copyright (c) 2006-2016 Cisco Systems, Inc.  All rights reserved.
 # Copyright (c) 2006-2008 Sun Microsystems, Inc.  All rights reserved.
 # Copyright (c) 2006-2011 Los Alamos National Security, LLC.  All rights
 #                         reserved.
@@ -161,7 +161,7 @@ AS_IF([test "$pmix_debug" = "1"],
 ############################################################################
 
 # Setup the pmix core
-PMIX_SETUP_CORE([])
+PMIX_SETUP_CORE()
 
 # Run the AM_CONDITIONALs
 PMIX_DO_AM_CONDITIONALS
@@ -210,6 +210,7 @@ AC_SUBST([CONFIGURE_DEPENDENCIES], ['$(top_srcdir)/VERSION'])
 AC_SUBST([libpmix_so_version])
 
 AC_CONFIG_FILES(pmix_config_prefix[examples/Makefile]
+                pmix_config_prefix[man/Makefile]
                 pmix_config_prefix[test/Makefile]
                 pmix_config_prefix[test/simple/Makefile])
 

@@ -1,6 +1,6 @@
 #!/usr/bin/env perl
 #
-# Copyright (c) 2009-2015 Cisco Systems, Inc.  All rights reserved.
+# Copyright (c) 2009-2016 Cisco Systems, Inc.  All rights reserved.
 # Copyright (c) 2010      Oracle and/or its affiliates.  All rights reserved.
 # Copyright (c) 2013      Mellanox Technologies, Inc.
 #                         All rights reserved.
@@ -168,10 +168,16 @@ sub mca_process_component {
         verbose "    Found configure.m4 file\n";
     }
 
-    $found_component->{"name"} = $component;
+    $found_component = {
+        name => $component,
+        framework_name => $framework,
+        project_name => $pname,
+        project_dir => $pdir,
+        abs_dir => $cdir,
+    };
 
     # Push the results onto the $mca_found hash array
-    push(@{$mca_found->{$pname}->{$framework}->{"components"}},
+    push(@{$mca_found->{$pdir}->{$framework}->{"components"}},
          $found_component);
 
 }
@@ -217,7 +223,7 @@ sub mca_process_framework {
     # Does this framework have a configure.m4 file?
     my $dir = "$topdir/$pdir/mca/$framework";
     if (-f "$dir/configure.m4") {
-        $mca_found->{$pname}->{$framework}->{"configure.m4"} = 1;
+        $mca_found->{$pdir}->{$framework}->{"configure.m4"} = 1;
         verbose "    Found framework configure.m4 file\n";
     }
 
@@ -228,7 +234,7 @@ sub mca_process_framework {
     } else {
         # Look for component directories in this framework
         if (-d $dir) {
-            $mca_found->{$pname}->{$framework}->{found} = 1;
+            $mca_found->{$pdir}->{$framework}->{found} = 1;
             opendir(DIR, $dir) ||
                 my_die "Can't open $dir directory";
             foreach my $d (readdir(DIR)) {
@@ -248,7 +254,7 @@ sub mca_process_framework {
                      next;
                 }
 
-                verbose "--- Found $pname / $framework / $d component\n";
+                verbose "--- Found $pdir / $framework / $d component: $pdir/mca/$framework/$d\n";
 
                 # Skip if specifically excluded
                 if (exists($exclude_list->{$framework}) &&
@@ -330,7 +336,7 @@ sub mca_process_project {
 
     # Does this project have a configure.m4 file?
     if (-f "$topdir/$pdir/configure.m4") {
-        $mca_found->{$pname}->{"configure.m4"} = 1;
+        $mca_found->{$pdir}->{"configure.m4"} = 1;
         verbose "    Found $topdir/$pdir/configure.m4 file\n";
     }
 
@@ -352,7 +358,7 @@ sub mca_process_project {
             # framework.
             if ("common" eq $d || !$project->{need_base} ||
                 (-f "$dir/$d/$d.h" && -d "$dir/$d/base")) {
-                verbose "\n=== Found $pname / $d framework\n";
+                verbose "\n=== Found $pdir / $d framework: $pdir/mca/$d\n";
                 mca_process_framework($topdir, $project, $d);
             }
         }
@@ -382,9 +388,10 @@ sub mca_run_global {
     my $str;
     foreach my $p (@$projects) {
         my $pname = $p->{name};
+        my $pdir = $p->{dir};
         # Check if this project is an MCA project (contains MCA framework)
-        if (exists($mca_found->{$pname})) {
-            $str .= "$p->{name}, ";
+        if (exists($mca_found->{$pdir})) {
+            $str .= "$p->{dir}, ";
         }
     }
     $str =~ s/, $//;
@@ -408,7 +415,7 @@ dnl MCA information\n";
         my $pname = $p->{name};
         my $pdir = $p->{dir};
 
-        if (exists($mca_found->{$pname})) {
+        if (exists($mca_found->{$pdir})) {
             my $frameworks_comma;
 
             # Does this project have a configure.m4 file?
@@ -416,7 +423,7 @@ dnl MCA information\n";
                 if (exists($mca_found->{$p}->{"configure.m4"}));
 
             # Print out project-level info
-            my @mykeys = keys(%{$mca_found->{$pname}});
+            my @mykeys = keys(%{$mca_found->{$pdir}});
             @mykeys = sort(@mykeys);
 
             # Ensure that the "common" framework is listed first
@@ -435,7 +442,7 @@ dnl MCA information\n";
 
                 # Does this framework have a configure.m4 file?
                 push(@includes, "$pdir/mca/$f/configure.m4")
-                    if (exists($mca_found->{$pname}->{$f}->{"configure.m4"}));
+                    if (exists($mca_found->{$pdir}->{$f}->{"configure.m4"}));
 
                 # This framework does have a Makefile.am (or at least,
                 # it should!)
@@ -444,12 +451,12 @@ dnl MCA information\n";
             }
             $frameworks_comma =~ s/^, //;
 
-            &mca_generate_framework_header($pname, @mykeys);
+            &mca_generate_framework_header($pdir, @mykeys);
 
             $m4 .= "$dnl_line
 
-dnl Frameworks in the $pname project and their corresponding directories
-m4_define([mca_${pname}_framework_list], [$frameworks_comma])
+dnl Frameworks in the $pdir project and their corresponding directories
+m4_define([mca_${pdir}_framework_list], [$frameworks_comma])
 
 ";
 
@@ -460,7 +467,7 @@ m4_define([mca_${pname}_framework_list], [$frameworks_comma])
                 my $no_config_component_list;
 
                 # Troll through each of the found components
-                foreach my $comp (@{$mca_found->{$pname}->{$f}->{components}}) {
+                foreach my $comp (@{$mca_found->{$pdir}->{$f}->{components}}) {
                     my $c = $comp->{name};
                     $components .= "$c ";
 
@@ -475,9 +482,9 @@ m4_define([mca_${pname}_framework_list], [$frameworks_comma])
                 $m4_config_component_list =~ s/^, //;
                 $no_config_component_list =~ s/^, //;
 
-                $m4 .= "dnl Components in the $pname / $f framework
-m4_define([mca_${pname}_${f}_m4_config_component_list], [$m4_config_component_list])
-m4_define([mca_${pname}_${f}_no_config_component_list], [$no_config_component_list])
+                $m4 .= "dnl Components in the $pdir / $f framework
+m4_define([mca_${pdir}_${f}_m4_config_component_list], [$m4_config_component_list])
+m4_define([mca_${pdir}_${f}_no_config_component_list], [$no_config_component_list])
 
 ";
             }
@@ -794,6 +801,7 @@ m4_define([project_name_long], [$project_name_long])
 m4_define([project_name_short], [$project_name_short])\n";
 
 # Setup MCA
+debug_dump($projects);
 mca_run_global($projects);
 
 #---------------------------------------------------------------------------
@@ -829,17 +837,10 @@ open(M4, ">$m4_output_file") ||
 print M4 $m4;
 close(M4);
 
-# Generate the version checking script with autom4te
-#verbose "==> Generating pmix_get_version.sh\n";
-#chdir("config");
-#safe_system("autom4te --language=m4sh pmix_get_version.m4sh -o pmix_get_version.sh");
-
 # Run autoreconf
 verbose "==> Running autoreconf\n";
 my $cmd = "autoreconf -ivf --warnings=all,no-obsolete,no-override -I config";
 safe_system($cmd);
-
-patch_autotools_output(".");
 
 #---------------------------------------------------------------------------
 
