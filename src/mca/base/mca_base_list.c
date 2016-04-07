@@ -9,6 +9,7 @@
  *                         University of Stuttgart.  All rights reserved.
  * Copyright (c) 2004-2005 The Regents of the University of California.
  *                         All rights reserved.
+ * Copyright (c) 2016      Intel, Inc. All rights reserved
  * $COPYRIGHT$
  *
  * Additional copyrights may follow
@@ -16,24 +17,24 @@
  * $HEADER$
  */
 
-#include "opal_config.h"
+#include "pmix_config.h"
 
-#include "opal/class/opal_list.h"
-#include "opal/mca/base/base.h"
+#include "pmix/class/pmix_list.h"
+#include "pmix/mca/base/base.h"
 
 
 /*
  * Local functions
  */
-static void cl_constructor(opal_object_t *obj);
-static void cpl_constructor(opal_object_t *obj);
+static void cl_constructor(pmix_object_t *obj);
+static void cpl_constructor(pmix_object_t *obj);
 
 
 /*
  * Class instance of the mca_base_component_list_item_t class
  */
 OBJ_CLASS_INSTANCE(mca_base_component_list_item_t,
-                   opal_list_item_t, cl_constructor, NULL);
+                   pmix_list_item_t, cl_constructor, NULL);
 
 
 /*
@@ -46,7 +47,7 @@ OBJ_CLASS_INSTANCE(mca_base_component_priority_list_item_t,
 /*
  * Just do basic sentinel intialization
  */
-static void cl_constructor(opal_object_t *obj)
+static void cl_constructor(pmix_object_t *obj)
 {
   mca_base_component_list_item_t *cli = (mca_base_component_list_item_t *) obj;
   cli->cli_component = NULL;
@@ -56,7 +57,7 @@ static void cl_constructor(opal_object_t *obj)
 /*
  * Just do basic sentinel intialization
  */
-static void cpl_constructor(opal_object_t *obj)
+static void cpl_constructor(pmix_object_t *obj)
 {
   mca_base_component_priority_list_item_t *cpli =
     (mca_base_component_priority_list_item_t *) obj;

@@ -16,6 +16,7 @@
  *                         and Technology (RIST). All rights reserved.
  * Copyright (c) 2014-2015 Los Alamos National Security, LLC. All rights
  *                         reserved.
+ * Copyright (c) 2016      Intel, Inc. All rights reserved.
  * $COPYRIGHT$
  *
  * Additional copyrights may follow
@@ -23,7 +24,7 @@
  * $HEADER$
  */
 
-#include "opal_config.h"
+#include "pmix_config.h"
 
 #include <stdio.h>
 #include <string.h>
@@ -45,26 +46,26 @@
 #include <netdb.h>
 #endif
 
-#include "opal/mca/installdirs/installdirs.h"
-#include "opal/util/opal_environ.h"
-#include "opal/util/output.h"
-#include "opal/util/argv.h"
-#include "opal/util/show_help.h"
-#include "opal/class/opal_list.h"
-#include "opal/mca/mca.h"
-#include "opal/mca/base/base.h"
-#include "opal/mca/base/mca_base_component_repository.h"
-#include "opal/constants.h"
-#include "opal/mca/dl/base/base.h"
+#include "pmix/mca/installdirs/installdirs.h"
+#include "pmix/util/pmix_environ.h"
+#include "pmix/util/output.h"
+#include "pmix/util/argv.h"
+#include "pmix/util/show_help.h"
+#include "pmix/class/pmix_list.h"
+#include "pmix/mca/mca.h"
+#include "pmix/mca/base/base.h"
+#include "pmix/mca/base/mca_base_component_repository.h"
+#include "pmix/constants.h"
+#include "pmix/mca/dl/base/base.h"
 
-#if OPAL_HAVE_DL_SUPPORT
+#if PMIX_HAVE_DL_SUPPORT
 /*
  * Private functions
  */
 static void find_dyn_components(const char *path, mca_base_framework_t *framework,
                                 const char **names, bool include_mode);
 
-#endif /* OPAL_HAVE_DL_SUPPORT */
+#endif /* PMIX_HAVE_DL_SUPPORT */
 
 static int component_find_check (mca_base_framework_t *framework, char **requested_component_names);
 
@@ -107,7 +108,7 @@ int mca_base_component_find (const char *directory, mca_base_framework_t *framew
     if (!ignore_requested) {
         ret = mca_base_component_parse_requested (framework->framework_selection, &include_mode,
                                                   &requested_component_names);
-        if (OPAL_SUCCESS != ret) {
+        if (PMIX_SUCCESS != ret) {
             return ret;
         }
     }
@@ -120,22 +121,22 @@ int mca_base_component_find (const char *directory, mca_base_framework_t *framew
                                static_components[i]->mca_component_name) ) {
                 cli = OBJ_NEW(mca_base_component_list_item_t);
                 if (NULL == cli) {
-                    ret = OPAL_ERR_OUT_OF_RESOURCE;
+                    ret = PMIX_ERR_OUT_OF_RESOURCE;
                     goto component_find_out;
                 }
                 cli->cli_component = static_components[i];
-                opal_list_append(&framework->framework_components, (opal_list_item_t *) cli);
+                pmix_list_append(&framework->framework_components, (pmix_list_item_t *) cli);
             }
         }
     }
 
-#if OPAL_HAVE_DL_SUPPORT
+#if PMIX_HAVE_DL_SUPPORT
     /* Find any available dynamic components in the specified directory */
     if (open_dso_components && !mca_base_component_disable_dlopen) {
         find_dyn_components(directory, framework, (const char**)requested_component_names,
                             include_mode);
     } else {
-        opal_output_verbose (MCA_BASE_VERBOSE_INFO, 0,
+        pmix_output_verbose (MCA_BASE_VERBOSE_INFO, 0,
                             "mca: base: component_find: dso loading for %s MCA components disabled",
                             framework->framework_name);
     }
@@ -144,13 +145,13 @@ int mca_base_component_find (const char *directory, mca_base_framework_t *framew
     if (include_mode) {
         ret = component_find_check (framework, requested_component_names);
     } else {
-        ret = OPAL_SUCCESS;
+        ret = PMIX_SUCCESS;
     }
 
 component_find_out:
 
     if (NULL != requested_component_names) {
-        opal_argv_free(requested_component_names);
+        pmix_argv_free(requested_component_names);
     }
 
     /* All done */
@@ -160,12 +161,12 @@ component_find_out:
 
 int mca_base_component_find_finalize(void)
 {
-    return OPAL_SUCCESS;
+    return PMIX_SUCCESS;
 }
 
 int mca_base_components_filter (mca_base_framework_t *framework, uint32_t filter_flags)
 {
-    opal_list_t *components = &framework->framework_components;
+    pmix_list_t *components = &framework->framework_components;
     int output_id = framework->framework_output;
     mca_base_component_list_item_t *cli, *next;
     char **requested_component_names = NULL;
@@ -175,16 +176,16 @@ int mca_base_components_filter (mca_base_framework_t *framework, uint32_t filter
     assert (NULL != components);
 
     if (0 == filter_flags && NULL == framework->framework_selection) {
-        return OPAL_SUCCESS;
+        return PMIX_SUCCESS;
     }
 
     ret = mca_base_component_parse_requested (framework->framework_selection, &include_mode,
                                               &requested_component_names);
-    if (OPAL_SUCCESS != ret) {
+    if (PMIX_SUCCESS != ret) {
         return ret;
     }
 
-    OPAL_LIST_FOREACH_SAFE(cli, next, components, mca_base_component_list_item_t) {
+    PMIX_LIST_FOREACH_SAFE(cli, next, components, mca_base_component_list_item_t) {
         const mca_base_component_t *component = cli->cli_component;
         mca_base_open_only_dummy_component_t *dummy =
             (mca_base_open_only_dummy_component_t *) cli->cli_component;
@@ -195,20 +196,20 @@ int mca_base_components_filter (mca_base_framework_t *framework, uint32_t filter
         if (!can_use || (filter_flags & dummy->data.param_field) != filter_flags) {
             if (can_use && (filter_flags & MCA_BASE_METADATA_PARAM_CHECKPOINT) &&
                 !(MCA_BASE_METADATA_PARAM_CHECKPOINT & dummy->data.param_field)) {
-                opal_output_verbose (MCA_BASE_VERBOSE_COMPONENT, output_id,
+                pmix_output_verbose (MCA_BASE_VERBOSE_COMPONENT, output_id,
                                      "mca: base: components_filter: "
                                      "(%s) Component %s is *NOT* Checkpointable - Disabled",
                                      component->reserved,
                                      component->mca_component_name);
             }
 
-            opal_list_remove_item (components, &cli->super);
+            pmix_list_remove_item (components, &cli->super);
 
             mca_base_component_unload (component, output_id);
 
             OBJ_RELEASE(cli);
         } else if (filter_flags & MCA_BASE_METADATA_PARAM_CHECKPOINT) {
-            opal_output_verbose (MCA_BASE_VERBOSE_COMPONENT, output_id,
+            pmix_output_verbose (MCA_BASE_VERBOSE_COMPONENT, output_id,
                                  "mca: base: components_filter: "
                                  "(%s) Component %s is Checkpointable",
                                  component->reserved,
@@ -219,17 +220,17 @@ int mca_base_components_filter (mca_base_framework_t *framework, uint32_t filter
     if (include_mode) {
         ret = component_find_check (framework, requested_component_names);
     } else {
-        ret = OPAL_SUCCESS;
+        ret = PMIX_SUCCESS;
     }
 
     if (NULL != requested_component_names) {
-        opal_argv_free (requested_component_names);
+        pmix_argv_free (requested_component_names);
     }
 
     return ret;
 }
 
-#if OPAL_HAVE_DL_SUPPORT
+#if PMIX_HAVE_DL_SUPPORT
 
 /*
  * Open up all directories in a given path and search for components of
@@ -243,30 +244,30 @@ static void find_dyn_components(const char *path, mca_base_framework_t *framewor
                                 const char **names, bool include_mode)
 {
     mca_base_component_repository_item_t *ri;
-    opal_list_t *dy_components;
+    pmix_list_t *dy_components;
     int ret;
 
     if (NULL != path) {
         ret = mca_base_component_repository_add (path);
-        if (OPAL_SUCCESS != ret) {
+        if (PMIX_SUCCESS != ret) {
             return;
         }
     }
 
     ret = mca_base_component_repository_get_components (framework, &dy_components);
-    if (OPAL_SUCCESS != ret) {
+    if (PMIX_SUCCESS != ret) {
         return;
     }
 
     /* Iterate through the repository and find components that can be included */
-    OPAL_LIST_FOREACH(ri, dy_components, mca_base_component_repository_item_t) {
+    PMIX_LIST_FOREACH(ri, dy_components, mca_base_component_repository_item_t) {
         if (use_component(include_mode, names, ri->ri_name)) {
             mca_base_component_repository_open (framework, ri);
         }
     }
 }
 
-#endif /* OPAL_HAVE_DL_SUPPORT */
+#endif /* PMIX_HAVE_DL_SUPPORT */
 
 static bool use_component(const bool include_mode,
                           const char **requested_component_names,
@@ -311,17 +312,17 @@ static bool use_component(const bool include_mode,
    and abort if they do not. */
 static int component_find_check (mca_base_framework_t *framework, char **requested_component_names)
 {
-    opal_list_t *components = &framework->framework_components;
+    pmix_list_t *components = &framework->framework_components;
     mca_base_component_list_item_t *cli;
 
     if (NULL == requested_component_names) {
-        return OPAL_SUCCESS;
+        return PMIX_SUCCESS;
     }
 
     for (int i = 0; NULL != requested_component_names[i]; ++i) {
         bool found = false;
 
-        OPAL_LIST_FOREACH(cli, components, mca_base_component_list_item_t) {
+        PMIX_LIST_FOREACH(cli, components, mca_base_component_list_item_t) {
             if (0 == strcmp(requested_component_names[i],
                             cli->cli_component->mca_component_name)) {
                 found = true;
@@ -332,14 +333,14 @@ static int component_find_check (mca_base_framework_t *framework, char **request
         if (!found) {
             char h[MAXHOSTNAMELEN];
             gethostname(h, sizeof(h));
-            opal_show_help("help-mca-base.txt",
+            pmix_show_help("help-mca-base.txt",
                            "find-available:not-valid", true,
                            h, framework->framework_name, requested_component_names[i]);
-            return OPAL_ERR_NOT_FOUND;
+            return PMIX_ERR_NOT_FOUND;
         }
     }
 
-    return OPAL_SUCCESS;
+    return PMIX_SUCCESS;
 }
 
 int mca_base_component_parse_requested (const char *requested, bool *include_mode,
@@ -352,7 +353,7 @@ int mca_base_component_parse_requested (const char *requested, bool *include_mod
 
     /* See if the user requested anything */
     if (NULL == requested || 0 == strlen (requested)) {
-        return OPAL_SUCCESS;
+        return PMIX_SUCCESS;
     }
 
     /* Are we including or excluding?  We only allow the negate
@@ -366,15 +367,15 @@ int mca_base_component_parse_requested (const char *requested, bool *include_mod
     /* Double check to ensure that the user did not specify the negate
        character anywhere else in the value. */
     if (NULL != strstr (requested, negate)) {
-        opal_show_help("help-mca-base.txt",
+        pmix_show_help("help-mca-base.txt",
                        "framework-param:too-many-negates",
                        true, requested_orig);
-        return OPAL_ERROR;
+        return PMIX_ERROR;
     }
 
     /* Split up the value into individual component names */
-    *requested_component_names = opal_argv_split(requested, ',');
+    *requested_component_names = pmix_argv_split(requested, ',');
 
     /* All done */
-    return OPAL_SUCCESS;
+    return PMIX_SUCCESS;
 }

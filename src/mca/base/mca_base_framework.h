@@ -2,6 +2,7 @@
 /*
  * Copyright (c) 2012-2015 Los Alamos National Security, LLC. All rights
  *                         reserved.
+ * Copyright (c) 2016      Intel, Inc. All rights reserved.
  * $COPYRIGHT$
  *
  * Additional copyrights may follow
@@ -9,11 +10,11 @@
  * $HEADER$
  */
 
-#if !defined(OPAL_MCA_BASE_FRAMEWORK_H)
-#define OPAL_MCA_BASE_FRAMEWORK_H
+#if !defined(PMIX_MCA_BASE_FRAMEWORK_H)
+#define PMIX_MCA_BASE_FRAMEWORK_H
 
-#include "opal/mca/mca.h"
-#include "opal/class/opal_list.h"
+#include "pmix/mca/mca.h"
+#include "pmix/class/pmix_list.h"
 
 /*
  * Register and open flags
@@ -46,8 +47,8 @@ typedef enum mca_base_open_flag_t mca_base_open_flag_t;
  *
  * @param[in] flags Registration flags (see mca/base/base.h)
  *
- * @retval OPAL_SUCCESS on success
- * @retval opal error code on failure
+ * @retval PMIX_SUCCESS on success
+ * @retval pmix error code on failure
  *
  * This function registers all framework MCA parameters. This
  * function should not call mca_base_framework_components_register().
@@ -60,14 +61,14 @@ typedef int (*mca_base_framework_register_params_fn_t) (mca_base_register_flag_t
 /**
  * Initialize the MCA framework
  *
- * @retval OPAL_SUCCESS Upon success
- * @retval OPAL_ERROR Upon failure
+ * @retval PMIX_SUCCESS Upon success
+ * @retval PMIX_ERROR Upon failure
  *
  * This must be the first function invoked in the MCA framework.
  * It initializes the MCA framework, finds and opens components,
  * populates the components list, etc.
  *
- * This function is invoked during opal_init() and during the
+ * This function is invoked during pmix_init() and during the
  * initialization of the special case of the ompi_info command.
  *
  * This function fills in the components framework value, which
@@ -91,10 +92,10 @@ typedef int (*mca_base_framework_open_fn_t) (mca_base_open_flag_t flags);
 /**
  * Shut down the MCA framework.
  *
- * @retval OPAL_SUCCESS Always
+ * @retval PMIX_SUCCESS Always
  *
  * This function should shut downs everything in the MCA
- * framework, and is called during opal_finalize() and the
+ * framework, and is called during pmix_finalize() and the
  * special case of the ompi_info command.
  *
  * It must be the last function invoked on the MCA framework.
@@ -124,7 +125,7 @@ typedef enum {
 } mca_base_framework_flags_t;
 
 typedef struct mca_base_framework_t {
-    /** Project name for this component (ex "opal") */
+    /** Project name for this component (ex "pmix") */
     char                                    *framework_project;
     /** Framework name */
     char                                    *framework_name;
@@ -149,11 +150,11 @@ typedef struct mca_base_framework_t {
     char                                    *framework_selection;
     /** Verbosity level (0-100) */
     int                                      framework_verbose;
-    /** Opal output for this framework (or -1) */
+    /** Pmix output for this framework (or -1) */
     int                                      framework_output;
     /** List of selected components (filled in by mca_base_framework_register()
         or mca_base_framework_open() */
-    opal_list_t                              framework_components;
+    pmix_list_t                              framework_components;
 } mca_base_framework_t;
 
 
@@ -162,12 +163,12 @@ typedef struct mca_base_framework_t {
  *
  * @param[in] framework framework to register
  *
- * @retval OPAL_SUCCESS Upon success
- * @retval OPAL_ERROR Upon failure
+ * @retval PMIX_SUCCESS Upon success
+ * @retval PMIX_ERROR Upon failure
  *
  * Call a framework's register function.
  */
-OPAL_DECLSPEC int mca_base_framework_register (mca_base_framework_t *framework,
+PMIX_DECLSPEC int mca_base_framework_register (mca_base_framework_t *framework,
                                                mca_base_register_flag_t flags);
 
 /**
@@ -175,12 +176,12 @@ OPAL_DECLSPEC int mca_base_framework_register (mca_base_framework_t *framework,
  *
  * @param[in] framework framework to open
  *
- * @retval OPAL_SUCCESS Upon success
- * @retval OPAL_ERROR Upon failure
+ * @retval PMIX_SUCCESS Upon success
+ * @retval PMIX_ERROR Upon failure
  *
  * Call a framework's open function.
  */
-OPAL_DECLSPEC int mca_base_framework_open (mca_base_framework_t *framework,
+PMIX_DECLSPEC int mca_base_framework_open (mca_base_framework_t *framework,
                                            mca_base_open_flag_t flags);
 
 /**
@@ -188,12 +189,12 @@ OPAL_DECLSPEC int mca_base_framework_open (mca_base_framework_t *framework,
  *
  * @param[in] framework framework to close
  *
- * @retval OPAL_SUCCESS Upon success
- * @retval OPAL_ERROR Upon failure
+ * @retval PMIX_SUCCESS Upon success
+ * @retval PMIX_ERROR Upon failure
  *
  * Call a framework's close function.
  */
-OPAL_DECLSPEC int mca_base_framework_close (mca_base_framework_t *framework);
+PMIX_DECLSPEC int mca_base_framework_close (mca_base_framework_t *framework);
 
 
 /**
@@ -204,7 +205,7 @@ OPAL_DECLSPEC int mca_base_framework_close (mca_base_framework_t *framework);
  * @retval true if the framework's mca variables are registered
  * @retval false if not
  */
-OPAL_DECLSPEC bool mca_base_framework_is_registered (struct mca_base_framework_t *framework);
+PMIX_DECLSPEC bool mca_base_framework_is_registered (struct mca_base_framework_t *framework);
 
 
 /**
@@ -215,14 +216,14 @@ OPAL_DECLSPEC bool mca_base_framework_is_registered (struct mca_base_framework_t
  * @retval true if the framework is open
  * @retval false if not
  */
-OPAL_DECLSPEC bool mca_base_framework_is_open (struct mca_base_framework_t *framework);
+PMIX_DECLSPEC bool mca_base_framework_is_open (struct mca_base_framework_t *framework);
 
 
 /**
  * Macro to declare an MCA framework
  *
  * Example:
- *  MCA_BASE_FRAMEWORK_DECLARE(opal, foo, NULL, opal_foo_open, opal_foo_close, MCA_BASE_FRAMEWORK_FLAG_LAZY)
+ *  MCA_BASE_FRAMEWORK_DECLARE(pmix, foo, NULL, pmix_foo_open, pmix_foo_close, MCA_BASE_FRAMEWORK_FLAG_LAZY)
  */
 #define MCA_BASE_FRAMEWORK_DECLARE(project, name, description, registerfn, openfn, closefn, static_components, flags) \
     mca_base_framework_t project##_##name##_base_framework = {   \
@@ -239,4 +240,4 @@ OPAL_DECLSPEC bool mca_base_framework_is_open (struct mca_base_framework_t *fram
         .framework_verbose           = 0,                               \
         .framework_output            = -1}
 
-#endif /* OPAL_MCA_BASE_FRAMEWORK_H */
+#endif /* PMIX_MCA_BASE_FRAMEWORK_H */

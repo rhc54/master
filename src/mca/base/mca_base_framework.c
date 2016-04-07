@@ -2,7 +2,8 @@
 /*
  * Copyright (c) 2012-2015 Los Alamos National Security, LLC. All rights
  *                         reserved.
- * Copyright (c) 2015 Cisco Systems, Inc.  All rights reserved.
+ * Copyright (c) 2015      Cisco Systems, Inc.  All rights reserved.
+ * Copyright (c) 2016      Intel, Inc. All rights reserved
  * $COPYRIGHT$
  *
  * Additional copyrights may follow
@@ -10,14 +11,14 @@
  * $HEADER$
  */
 
-#include "opal/include/opal_config.h"
+#include "pmix/include/pmix_config.h"
 
-#include "opal/include/opal/constants.h"
-#include "opal/util/output.h"
+#include "pmix/include/pmix/constants.h"
+#include "pmix/util/output.h"
 
 #include "mca_base_framework.h"
 #include "mca_base_var.h"
-#include "opal/mca/base/base.h"
+#include "pmix/mca/base/base.h"
 
 bool mca_base_framework_is_registered (struct mca_base_framework_t *framework)
 {
@@ -33,12 +34,12 @@ static void framework_open_output (struct mca_base_framework_t *framework)
 {
     if (0 < framework->framework_verbose) {
         if (-1 == framework->framework_output) {
-            framework->framework_output = opal_output_open (NULL);
+            framework->framework_output = pmix_output_open (NULL);
         }
-        opal_output_set_verbosity(framework->framework_output,
+        pmix_output_set_verbosity(framework->framework_output,
                                   framework->framework_verbose);
     } else if (-1 != framework->framework_output) {
-        opal_output_close (framework->framework_output);
+        pmix_output_close (framework->framework_output);
         framework->framework_output = -1;
     }
 }
@@ -46,7 +47,7 @@ static void framework_open_output (struct mca_base_framework_t *framework)
 static void framework_close_output (struct mca_base_framework_t *framework)
 {
     if (-1 != framework->framework_output) {
-        opal_output_close (framework->framework_output);
+        pmix_output_close (framework->framework_output);
         framework->framework_output = -1;
     }
 }
@@ -62,10 +63,10 @@ int mca_base_framework_register (struct mca_base_framework_t *framework,
     framework->framework_refcnt++;
 
     if (mca_base_framework_is_registered (framework)) {
-        return OPAL_SUCCESS;
+        return PMIX_SUCCESS;
     }
 
-    OBJ_CONSTRUCT(&framework->framework_components, opal_list_t);
+    OBJ_CONSTRUCT(&framework->framework_components, pmix_list_t);
 
     if (framework->framework_flags & MCA_BASE_FRAMEWORK_FLAG_NO_DSO) {
         flags |= MCA_BASE_REGISTER_STATIC_ONLY;
@@ -84,7 +85,7 @@ int mca_base_framework_register (struct mca_base_framework_t *framework,
                   " means use all components that can be found)", framework->framework_name);
         ret = mca_base_var_register (framework->framework_project, framework->framework_name,
                                      NULL, NULL, desc, MCA_BASE_VAR_TYPE_STRING, NULL, 0,
-                                     MCA_BASE_VAR_FLAG_SETTABLE, OPAL_INFO_LVL_2,
+                                     MCA_BASE_VAR_FLAG_SETTABLE, PMIX_INFO_LVL_2,
                                      MCA_BASE_VAR_SCOPE_ALL_EQ, &framework->framework_selection);
         free (desc);
         if (0 > ret) {
@@ -95,7 +96,7 @@ int mca_base_framework_register (struct mca_base_framework_t *framework,
         ret = asprintf (&desc, "Verbosity level for the %s framework (default: 0)",
                         framework->framework_name);
         if (0 > ret) {
-            return OPAL_ERR_OUT_OF_RESOURCE;
+            return PMIX_ERR_OUT_OF_RESOURCE;
         }
 
         framework->framework_verbose = MCA_BASE_VERBOSE_ERROR;
@@ -103,7 +104,7 @@ int mca_base_framework_register (struct mca_base_framework_t *framework,
                                                MCA_BASE_VAR_TYPE_INT,
                                                &mca_base_var_enum_verbose, 0,
                                                MCA_BASE_VAR_FLAG_SETTABLE,
-                                               OPAL_INFO_LVL_8,
+                                               PMIX_INFO_LVL_8,
                                                MCA_BASE_VAR_SCOPE_LOCAL,
                                                &framework->framework_verbose);
         free(desc);
@@ -118,14 +119,14 @@ int mca_base_framework_register (struct mca_base_framework_t *framework,
         /* register framework variables */
         if (NULL != framework->framework_register) {
             ret = framework->framework_register (flags);
-            if (OPAL_SUCCESS != ret) {
+            if (PMIX_SUCCESS != ret) {
                 return ret;
             }
         }
 
         /* register components variables */
         ret = mca_base_framework_components_register (framework, flags);
-        if (OPAL_SUCCESS != ret) {
+        if (PMIX_SUCCESS != ret) {
             return ret;
         }
     }
@@ -133,7 +134,7 @@ int mca_base_framework_register (struct mca_base_framework_t *framework,
     framework->framework_flags |= MCA_BASE_FRAMEWORK_FLAG_REGISTERED;
 
     /* framework did not provide a register function */
-    return OPAL_SUCCESS;
+    return PMIX_SUCCESS;
 }
 
 int mca_base_framework_open (struct mca_base_framework_t *framework,
@@ -144,13 +145,13 @@ int mca_base_framework_open (struct mca_base_framework_t *framework,
 
     /* register this framework before opening it */
     ret = mca_base_framework_register (framework, MCA_BASE_REGISTER_DEFAULT);
-    if (OPAL_SUCCESS != ret) {
+    if (PMIX_SUCCESS != ret) {
         return ret;
     }
 
     /* check if this framework is already open */
     if (mca_base_framework_is_open (framework)) {
-        return OPAL_SUCCESS;
+        return PMIX_SUCCESS;
     }
 
     if (MCA_BASE_FRAMEWORK_FLAG_NOREGISTER & framework->framework_flags) {
@@ -176,7 +177,7 @@ int mca_base_framework_open (struct mca_base_framework_t *framework,
         ret = mca_base_framework_components_open (framework, flags);
     }
 
-    if (OPAL_SUCCESS != ret) {
+    if (PMIX_SUCCESS != ret) {
         framework->framework_refcnt--;
     } else {
         framework->framework_flags |= MCA_BASE_FRAMEWORK_FLAG_OPEN;
@@ -193,12 +194,12 @@ int mca_base_framework_close (struct mca_base_framework_t *framework) {
     assert (NULL != framework);
 
     if (!(is_open || is_registered)) {
-        return OPAL_SUCCESS;
+        return PMIX_SUCCESS;
     }
 
     assert (framework->framework_refcnt);
     if (--framework->framework_refcnt) {
-        return OPAL_SUCCESS;
+        return PMIX_SUCCESS;
     }
 
     /* find and deregister all component groups and variables */
@@ -216,19 +217,19 @@ int mca_base_framework_close (struct mca_base_framework_t *framework) {
             ret = mca_base_framework_components_close (framework, NULL);
         }
 
-        if (OPAL_SUCCESS != ret) {
+        if (PMIX_SUCCESS != ret) {
             return ret;
         }
     } else {
-        opal_list_item_t *item;
-        while (NULL != (item = opal_list_remove_first (&framework->framework_components))) {
+        pmix_list_item_t *item;
+        while (NULL != (item = pmix_list_remove_first (&framework->framework_components))) {
             mca_base_component_list_item_t *cli;
             cli = (mca_base_component_list_item_t*) item;
             mca_base_component_unload(cli->cli_component,
                                       framework->framework_output);
             OBJ_RELEASE(item);
         }
-        ret = OPAL_SUCCESS;
+        ret = PMIX_SUCCESS;
     }
 
     framework->framework_flags &= ~(MCA_BASE_FRAMEWORK_FLAG_REGISTERED | MCA_BASE_FRAMEWORK_FLAG_OPEN);

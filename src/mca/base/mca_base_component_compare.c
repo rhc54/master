@@ -9,6 +9,7 @@
  *                         University of Stuttgart.  All rights reserved.
  * Copyright (c) 2004-2005 The Regents of the University of California.
  *                         All rights reserved.
+ * Copyright (c) 2016      Intel, Inc. All rights reserved
  * $COPYRIGHT$
  *
  * Additional copyrights may follow
@@ -16,12 +17,12 @@
  * $HEADER$
  */
 
-#include "opal_config.h"
+#include "pmix_config.h"
 
 #include <string.h>
 
-#include "opal/mca/mca.h"
-#include "opal/mca/base/base.h"
+#include "pmix/mca/mca.h"
+#include "pmix/mca/base/base.h"
 
 
 /*

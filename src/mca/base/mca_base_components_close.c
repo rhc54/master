@@ -12,6 +12,7 @@
  *                         All rights reserved.
  * Copyright (c) 2013-2015 Los Alamos National Security, LLC. All rights
  *                         reserved.
+ * Copyright (c) 2016      Intel, Inc. All rights reserved.
  * $COPYRIGHT$
  *
  * Additional copyrights may follow
@@ -19,21 +20,21 @@
  * $HEADER$
  */
 
-#include "opal_config.h"
+#include "pmix_config.h"
 
-#include "opal/class/opal_list.h"
-#include "opal/util/output.h"
-#include "opal/mca/mca.h"
-#include "opal/mca/base/base.h"
-#include "opal/mca/base/mca_base_component_repository.h"
-#include "opal/constants.h"
+#include "pmix/class/pmix_list.h"
+#include "pmix/util/output.h"
+#include "pmix/mca/mca.h"
+#include "pmix/mca/base/base.h"
+#include "pmix/mca/base/mca_base_component_repository.h"
+#include "pmix/constants.h"
 
 void mca_base_component_unload (const mca_base_component_t *component, int output_id)
 {
     int ret;
 
     /* Unload */
-    opal_output_verbose (MCA_BASE_VERBOSE_COMPONENT, output_id,
+    pmix_output_verbose (MCA_BASE_VERBOSE_COMPONENT, output_id,
                          "mca: base: close: unloading component %s",
                          component->mca_component_name);
 
@@ -51,7 +52,7 @@ void mca_base_component_close (const mca_base_component_t *component, int output
     /* Close */
     if (NULL != component->mca_close_component) {
         component->mca_close_component();
-        opal_output_verbose (MCA_BASE_VERBOSE_COMPONENT, output_id,
+        pmix_output_verbose (MCA_BASE_VERBOSE_COMPONENT, output_id,
                              "mca: base: close: component %s closed",
                              component->mca_component_name);
     }
@@ -67,7 +68,7 @@ int mca_base_framework_components_close (mca_base_framework_t *framework,
                                       skip);
 }
 
-int mca_base_components_close(int output_id, opal_list_t *components,
+int mca_base_components_close(int output_id, pmix_list_t *components,
                               const mca_base_component_t *skip)
 {
     mca_base_component_list_item_t *cli, *next;
@@ -77,17 +78,17 @@ int mca_base_components_close(int output_id, opal_list_t *components,
        components.  It's easier to simply remove the entire list and
        then simply re-add the skip entry when done. */
 
-    OPAL_LIST_FOREACH_SAFE(cli, next, components, mca_base_component_list_item_t) {
+    PMIX_LIST_FOREACH_SAFE(cli, next, components, mca_base_component_list_item_t) {
         if (skip == cli->cli_component) {
             continue;
         }
 
         mca_base_component_close (cli->cli_component, output_id);
-        opal_list_remove_item (components, &cli->super);
+        pmix_list_remove_item (components, &cli->super);
 
         OBJ_RELEASE(cli);
     }
 
     /* All done */
-    return OPAL_SUCCESS;
+    return PMIX_SUCCESS;
 }

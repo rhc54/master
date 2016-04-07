@@ -13,6 +13,7 @@
  * Copyright (c) 2011      Cisco Systems, Inc.  All rights reserved.
  * Copyright (c) 2015      Los Alamos National Security, LLC. All rights
  *                         reserved.
+ * Copyright (c) 2016      Intel, Inc. All rights reserved
  * $COPYRIGHT$
  *
  * Additional copyrights may follow
@@ -20,7 +21,7 @@
  * $HEADER$
  */
 
-#include "opal_config.h"
+#include "pmix_config.h"
 
 #include <stdio.h>
 #include <string.h>
@@ -31,14 +32,14 @@
 #include <unistd.h>
 #endif
 
-#include "opal/mca/installdirs/installdirs.h"
-#include "opal/util/output.h"
-#include "opal/util/printf.h"
-#include "opal/mca/mca.h"
-#include "opal/mca/base/base.h"
-#include "opal/mca/base/mca_base_component_repository.h"
-#include "opal/constants.h"
-#include "opal/util/opal_environ.h"
+#include "pmix/mca/installdirs/installdirs.h"
+#include "pmix/util/output.h"
+#include "pmix/util/printf.h"
+#include "pmix/mca/mca.h"
+#include "pmix/mca/base/base.h"
+#include "pmix/mca/base/mca_base_component_repository.h"
+#include "pmix/constants.h"
+#include "pmix/util/pmix_environ.h"
 
 /*
  * Public variables
@@ -55,8 +56,8 @@ static char *mca_base_verbose = NULL;
 /*
  * Private functions
  */
-static void set_defaults(opal_output_stream_t *lds);
-static void parse_verbose(char *e, opal_output_stream_t *lds);
+static void set_defaults(pmix_output_stream_t *lds);
+static void parse_verbose(char *e, pmix_output_stream_t *lds);
 
 
 /*
@@ -65,20 +66,20 @@ static void parse_verbose(char *e, opal_output_stream_t *lds);
 int mca_base_open(void)
 {
     char *value;
-    opal_output_stream_t lds;
+    pmix_output_stream_t lds;
     char hostname[64];
     int var_id;
 
     if (mca_base_opened++) {
-        return OPAL_SUCCESS;
+        return PMIX_SUCCESS;
     }
 
     /* define the system and user default paths */
-#if OPAL_WANT_HOME_CONFIG_FILES
-    mca_base_system_default_path = strdup(opal_install_dirs.opallibdir);
-    asprintf(&mca_base_user_default_path, "%s"OPAL_PATH_SEP".openmpi"OPAL_PATH_SEP"components", opal_home_directory());
+#if PMIX_WANT_HOME_CONFIG_FILES
+    mca_base_system_default_path = strdup(pmix_install_dirs.pmixlibdir);
+    asprintf(&mca_base_user_default_path, "%s"PMIX_PATH_SEP".openmpi"PMIX_PATH_SEP"components", pmix_home_directory());
 #else
-    asprintf(&mca_base_system_default_path, "%s", opal_install_dirs.opallibdir);
+    asprintf(&mca_base_system_default_path, "%s", pmix_install_dirs.pmixlibdir);
 #endif
 
     /* see if the user wants to override the defaults */
@@ -86,49 +87,49 @@ int mca_base_open(void)
         value = strdup(mca_base_system_default_path);
     } else {
         asprintf(&value, "%s%c%s", mca_base_system_default_path,
-                 OPAL_ENV_SEP, mca_base_user_default_path);
+                 PMIX_ENV_SEP, mca_base_user_default_path);
     }
 
     mca_base_component_path = value;
-    var_id = mca_base_var_register("opal", "mca", "base", "component_path",
+    var_id = mca_base_var_register("pmix", "mca", "base", "component_path",
                                    "Path where to look for additional components",
                                    MCA_BASE_VAR_TYPE_STRING, NULL, 0, 0,
-                                   OPAL_INFO_LVL_9,
+                                   PMIX_INFO_LVL_9,
                                    MCA_BASE_VAR_SCOPE_READONLY,
                                    &mca_base_component_path);
-    (void) mca_base_var_register_synonym(var_id, "opal", "mca", NULL, "component_path",
+    (void) mca_base_var_register_synonym(var_id, "pmix", "mca", NULL, "component_path",
                                          MCA_BASE_VAR_SYN_FLAG_DEPRECATED);
     free(value);
 
     mca_base_component_show_load_errors = true;
-    var_id = mca_base_var_register("opal", "mca", "base", "component_show_load_errors",
+    var_id = mca_base_var_register("pmix", "mca", "base", "component_show_load_errors",
                                    "Whether to show errors for components that failed to load or not",
                                    MCA_BASE_VAR_TYPE_BOOL, NULL, 0, 0,
-                                   OPAL_INFO_LVL_9,
+                                   PMIX_INFO_LVL_9,
                                    MCA_BASE_VAR_SCOPE_READONLY,
                                    &mca_base_component_show_load_errors);
-    (void) mca_base_var_register_synonym(var_id, "opal", "mca", NULL, "component_show_load_errors",
+    (void) mca_base_var_register_synonym(var_id, "pmix", "mca", NULL, "component_show_load_errors",
                                          MCA_BASE_VAR_SYN_FLAG_DEPRECATED);
 
     mca_base_component_disable_dlopen = false;
-    var_id = mca_base_var_register("opal", "mca", "base", "component_disable_dlopen",
+    var_id = mca_base_var_register("pmix", "mca", "base", "component_disable_dlopen",
                                    "Whether to attempt to disable opening dynamic components or not",
                                    MCA_BASE_VAR_TYPE_BOOL, NULL, 0, 0,
-                                   OPAL_INFO_LVL_9,
+                                   PMIX_INFO_LVL_9,
                                    MCA_BASE_VAR_SCOPE_READONLY,
                                    &mca_base_component_disable_dlopen);
-    (void) mca_base_var_register_synonym(var_id, "opal", "mca", NULL, "component_disable_dlopen",
+    (void) mca_base_var_register_synonym(var_id, "pmix", "mca", NULL, "component_disable_dlopen",
                                          MCA_BASE_VAR_SYN_FLAG_DEPRECATED);
 
     /* What verbosity level do we want for the default 0 stream? */
     mca_base_verbose = "stderr";
-    var_id = mca_base_var_register("opal", "mca", "base", "verbose",
+    var_id = mca_base_var_register("pmix", "mca", "base", "verbose",
                                    "Specifies where the default error output stream goes (this is separate from distinct help messages).  Accepts a comma-delimited list of: stderr, stdout, syslog, syslogpri:<notice|info|debug>, syslogid:<str> (where str is the prefix string for all syslog notices), file[:filename] (if filename is not specified, a default filename is used), fileappend (if not specified, the file is opened for truncation), level[:N] (if specified, integer verbose level; otherwise, 0 is implied)",
                                    MCA_BASE_VAR_TYPE_STRING, NULL, 0, 0,
-                                   OPAL_INFO_LVL_9,
+                                   PMIX_INFO_LVL_9,
                                    MCA_BASE_VAR_SCOPE_READONLY,
                                    &mca_base_verbose);
-    (void) mca_base_var_register_synonym(var_id, "opal", "mca", NULL, "verbose",
+    (void) mca_base_var_register_synonym(var_id, "pmix", "mca", NULL, "verbose",
                                          MCA_BASE_VAR_SYN_FLAG_DEPRECATED);
 
     memset(&lds, 0, sizeof(lds));
@@ -139,8 +140,8 @@ int mca_base_open(void)
     }
     gethostname(hostname, 64);
     asprintf(&lds.lds_prefix, "[%s:%05d] ", hostname, getpid());
-    opal_output_reopen(0, &lds);
-    opal_output_verbose (MCA_BASE_VERBOSE_COMPONENT, 0, "mca: base: opening components");
+    pmix_output_reopen(0, &lds);
+    pmix_output_verbose (MCA_BASE_VERBOSE_COMPONENT, 0, "mca: base: opening components");
     free(lds.lds_prefix);
 
     /* Open up the component repository */
@@ -152,12 +153,12 @@ int mca_base_open(void)
 /*
  * Set sane default values for the lds
  */
-static void set_defaults(opal_output_stream_t *lds)
+static void set_defaults(pmix_output_stream_t *lds)
 {
 
     /* Load up defaults */
 
-    OBJ_CONSTRUCT(lds, opal_output_stream_t);
+    OBJ_CONSTRUCT(lds, pmix_output_stream_t);
     lds->lds_syslog_priority = LOG_INFO;
     lds->lds_syslog_ident = "ompi";
     lds->lds_want_stderr = true;
@@ -167,7 +168,7 @@ static void set_defaults(opal_output_stream_t *lds)
 /*
  * Parse the value of an environment variable describing verbosity
  */
-static void parse_verbose(char *e, opal_output_stream_t *lds)
+static void parse_verbose(char *e, pmix_output_stream_t *lds)
 {
     char *edup;
     char *ptr, *next;
@@ -229,7 +230,7 @@ static void parse_verbose(char *e, opal_output_stream_t *lds)
 
         else if (strncasecmp(ptr, "level", 5) == 0) {
             lds->lds_verbose_level = 0;
-            if (ptr[5] == OPAL_ENV_SEP)
+            if (ptr[5] == PMIX_ENV_SEP)
                 lds->lds_verbose_level = atoi(ptr + 6);
         }
 

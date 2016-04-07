@@ -13,6 +13,7 @@
  * Copyright (c) 2009      Cisco Systems, Inc.  All rights reserved.
  * Copyright (c) 2015      Los Alamos National Security, LLC. All rights
  *                         reserved.
+ * Copyright (c) 2016      Intel, Inc. All rights reserved.
  * $COPYRIGHT$
  *
  * Additional copyrights may follow
@@ -20,13 +21,13 @@
  * $HEADER$
  */
 
-#include "opal_config.h"
+#include "pmix_config.h"
 
-#include "opal/util/output.h"
-#include "opal/mca/mca.h"
-#include "opal/mca/base/base.h"
-#include "opal/mca/base/mca_base_component_repository.h"
-#include "opal/constants.h"
+#include "pmix/util/output.h"
+#include "pmix/mca/mca.h"
+#include "pmix/mca/base/base.h"
+#include "pmix/mca/base/mca_base_component_repository.h"
+#include "pmix/constants.h"
 
 extern int mca_base_opened;
 
@@ -38,7 +39,7 @@ int mca_base_close(void)
     assert (mca_base_opened);
     if (!--mca_base_opened) {
         /* deregister all MCA base parameters */
-        int group_id = mca_base_var_group_find ("opal", "mca", "base");
+        int group_id = mca_base_var_group_find ("pmix", "mca", "base");
 
         if (-1 < group_id) {
             mca_base_var_group_deregister (group_id);
@@ -58,10 +59,10 @@ int mca_base_close(void)
         /* Shut down the dynamic component finder */
         mca_base_component_find_finalize();
 
-        /* Close opal output stream 0 */
-        opal_output_close(0);
+        /* Close pmix output stream 0 */
+        pmix_output_close(0);
     }
 
     /* All done */
-    return OPAL_SUCCESS;
+    return PMIX_SUCCESS;
 }

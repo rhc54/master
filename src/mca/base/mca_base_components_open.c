@@ -14,6 +14,7 @@
  * Copyright (c) 2011-2015 Los Alamos National Security, LLC.
  *                         All rights reserved.
  * Copyright (c) 2014      Hochschule Esslingen.  All rights reserved.
+ * Copyright (c) 2016      Intel, Inc. All rights reserved.
  * $COPYRIGHT$
  *
  * Additional copyrights may follow
@@ -21,20 +22,20 @@
  * $HEADER$
  */
 
-#include "opal_config.h"
+#include "pmix_config.h"
 
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
 
-#include "opal/class/opal_list.h"
-#include "opal/util/argv.h"
-#include "opal/util/output.h"
-#include "opal/mca/mca.h"
-#include "opal/mca/base/base.h"
-#include "opal/constants.h"
-#if OPAL_ENABLE_FT_CR == 1
-#include "opal/runtime/opal_params.h"
+#include "pmix/class/pmix_list.h"
+#include "pmix/util/argv.h"
+#include "pmix/util/output.h"
+#include "pmix/mca/mca.h"
+#include "pmix/mca/base/base.h"
+#include "pmix/constants.h"
+#if PMIX_ENABLE_FT_CR == 1
+#include "pmix/runtime/pmix_params.h"
 #endif
 
 /*
@@ -43,7 +44,7 @@
 static int open_components(mca_base_framework_t *framework);
 
 struct mca_base_dummy_framework_list_item_t {
-    opal_list_item_t super;
+    pmix_list_item_t super;
     mca_base_framework_t framework;
 };
 
@@ -59,7 +60,7 @@ int mca_base_framework_components_open (mca_base_framework_t *framework,
         bool open_dso_components = !(flags & MCA_BASE_OPEN_STATIC_ONLY);
         /* Find and load requested components */
         int ret = mca_base_component_find(NULL, framework, false, open_dso_components);
-        if (OPAL_SUCCESS != ret) {
+        if (PMIX_SUCCESS != ret) {
             return ret;
         }
     }
@@ -77,7 +78,7 @@ int mca_base_framework_components_open (mca_base_framework_t *framework,
  */
 static int open_components(mca_base_framework_t *framework)
 {
-    opal_list_t *components = &framework->framework_components;
+    pmix_list_t *components = &framework->framework_components;
     uint32_t open_only_flags = MCA_BASE_METADATA_PARAM_NONE;
     int output_id = framework->framework_output;
     mca_base_component_list_item_t *cli, *next;
@@ -95,28 +96,28 @@ static int open_components(mca_base_framework_t *framework)
      *
      * NTH: Logic moved to mca_base_components_filter.
      */
-#if (OPAL_ENABLE_FT == 1) && (OPAL_ENABLE_FT_CR == 1)
-    if (opal_base_distill_checkpoint_ready) {
+#if (PMIX_ENABLE_FT == 1) && (PMIX_ENABLE_FT_CR == 1)
+    if (pmix_base_distill_checkpoint_ready) {
         open_only_flags |= MCA_BASE_METADATA_PARAM_CHECKPOINT;
     }
-#endif  /* (OPAL_ENABLE_FT == 1) && (OPAL_ENABLE_FT_CR == 1) */
+#endif  /* (PMIX_ENABLE_FT == 1) && (PMIX_ENABLE_FT_CR == 1) */
 
     /* If mca_base_framework_register_components was called with the MCA_BASE_COMPONENTS_ALL flag
        we need to trim down and close any extra components we do not want open */
     ret = mca_base_components_filter (framework, open_only_flags);
-    if (OPAL_SUCCESS != ret) {
+    if (PMIX_SUCCESS != ret) {
         return ret;
     }
 
     /* Announce */
-    opal_output_verbose (MCA_BASE_VERBOSE_COMPONENT, output_id, "mca: base: components_open: opening %s components",
+    pmix_output_verbose (MCA_BASE_VERBOSE_COMPONENT, output_id, "mca: base: components_open: opening %s components",
                          framework->framework_name);
 
     /* Traverse the list of components */
-    OPAL_LIST_FOREACH_SAFE(cli, next, components, mca_base_component_list_item_t) {
+    PMIX_LIST_FOREACH_SAFE(cli, next, components, mca_base_component_list_item_t) {
         const mca_base_component_t *component = cli->cli_component;
 
-        opal_output_verbose (MCA_BASE_VERBOSE_COMPONENT, output_id,
+        pmix_output_verbose (MCA_BASE_VERBOSE_COMPONENT, output_id,
                              "mca: base: components_open: found loaded component %s",
                              component->mca_component_name);
 
@@ -124,14 +125,14 @@ static int open_components(mca_base_framework_t *framework)
 	    /* Call open if register didn't call it already */
             ret = component->mca_open_component();
 
-            if (OPAL_SUCCESS == ret) {
-                opal_output_verbose (MCA_BASE_VERBOSE_COMPONENT, output_id,
+            if (PMIX_SUCCESS == ret) {
+                pmix_output_verbose (MCA_BASE_VERBOSE_COMPONENT, output_id,
                                      "mca: base: components_open: "
                                      "component %s open function successful",
                                      component->mca_component_name);
             } else {
-		if (OPAL_ERR_NOT_AVAILABLE != ret) {
-		    /* If the component returns OPAL_ERR_NOT_AVAILABLE,
+		if (PMIX_ERR_NOT_AVAILABLE != ret) {
+		    /* If the component returns PMIX_ERR_NOT_AVAILABLE,
 		       it's a cue to "silently ignore me" -- it's not a
 		       failure, it's just a way for the component to say
 		       "nope!".
@@ -143,13 +144,13 @@ static int open_components(mca_base_framework_t *framework)
 		       expected. */
 
 		    if (mca_base_component_show_load_errors) {
-			opal_output_verbose (MCA_BASE_VERBOSE_ERROR, output_id,
+			pmix_output_verbose (MCA_BASE_VERBOSE_ERROR, output_id,
                                              "mca: base: components_open: component %s "
                                              "/ %s open function failed",
                                              component->mca_type_name,
                                              component->mca_component_name);
 		    }
-		    opal_output_verbose (MCA_BASE_VERBOSE_COMPONENT, output_id,
+		    pmix_output_verbose (MCA_BASE_VERBOSE_COMPONENT, output_id,
                                          "mca: base: components_open: "
                                          "component %s open function failed",
                                          component->mca_component_name);
@@ -157,7 +158,7 @@ static int open_components(mca_base_framework_t *framework)
 
                 mca_base_component_close (component, output_id);
 
-		opal_list_remove_item (components, &cli->super);
+		pmix_list_remove_item (components, &cli->super);
 		OBJ_RELEASE(cli);
 	    }
 	}
@@ -165,5 +166,5 @@ static int open_components(mca_base_framework_t *framework)
 
     /* All done */
 
-    return OPAL_SUCCESS;
+    return PMIX_SUCCESS;
 }

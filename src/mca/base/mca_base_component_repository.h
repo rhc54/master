@@ -10,9 +10,10 @@
  *                         University of Stuttgart.  All rights reserved.
  * Copyright (c) 2004-2005 The Regents of the University of California.
  *                         All rights reserved.
- * Copyright (c) 2015 Cisco Systems, Inc.  All rights reserved.
+ * Copyright (c) 2015      Cisco Systems, Inc.  All rights reserved.
  * Copyright (c) 2015      Los Alamos National Security, LLC. All rights
  *                         reserved.
+ * Copyright (c) 2016      Intel, Inc. All rights reserved.
  * $COPYRIGHT$
  *
  * Additional copyrights may follow
@@ -27,7 +28,7 @@
  * module.  Most of the components that depend on it, will use the
  * retain_component() function to increase the reference count on a
  * particular component (as opposed to the retain() function, which is
- * internal to the opal/mca/base).  But it's convenient to have all
+ * internal to the pmix/mca/base).  But it's convenient to have all
  * the functions exported from one header file rather than to separate
  * retain_component() and retain() into two separate header files
  * (i.e., have a separate header file just for retain()).
@@ -36,14 +37,14 @@
 #ifndef MCA_BASE_COMPONENT_REPOSITORY_H
 #define MCA_BASE_COMPONENT_REPOSITORY_H
 
-#include "opal_config.h"
+#include "pmix_config.h"
 
-#include "opal/mca/dl/dl.h"
-#include "opal/mca/dl/base/base.h"
+#include "pmix/mca/dl/dl.h"
+#include "pmix/mca/dl/base/base.h"
 
 BEGIN_C_DECLS
 struct mca_base_component_repository_item_t {
-    opal_list_item_t super;
+    pmix_list_item_t super;
 
     char ri_type[MCA_BASE_MAX_TYPE_NAME_LEN + 1];
     char ri_name[MCA_BASE_MAX_COMPONENT_NAME_LEN + 1];
@@ -51,7 +52,7 @@ struct mca_base_component_repository_item_t {
     char *ri_path;
     char *ri_base;
 
-    opal_dl_handle_t *ri_dlhandle;
+    pmix_dl_handle_t *ri_dlhandle;
     const mca_base_component_t *ri_component_struct;
 
     int ri_refcnt;
@@ -69,14 +70,14 @@ OBJ_CLASS_DECLARATION(mca_base_component_repository_item_t);
  * mca_base_component_path MCA parameter. mca_base_open () is a
  * prerequisite call as it registers the mca_base_component_path parameter.
  */
-OPAL_DECLSPEC int mca_base_component_repository_init(void);
+PMIX_DECLSPEC int mca_base_component_repository_init(void);
 
 /**
  * @brief add search path for dynamically loaded components
  *
  * @param[in] path        delimited list of search paths to add
  */
-OPAL_DECLSPEC int mca_base_component_repository_add (const char *path);
+PMIX_DECLSPEC int mca_base_component_repository_add (const char *path);
 
 
 /**
@@ -88,13 +89,13 @@ OPAL_DECLSPEC int mca_base_component_repository_add (const char *path);
  * The list returned in {framework_components} is owned by the component
  * repository and CAN NOT be modified by the caller.
  */
-OPAL_DECLSPEC int mca_base_component_repository_get_components (mca_base_framework_t *framework,
-                                                                opal_list_t **framework_components);
+PMIX_DECLSPEC int mca_base_component_repository_get_components (mca_base_framework_t *framework,
+                                                                pmix_list_t **framework_components);
 
 /**
  * @brief finalize the mca component repository
  */
-OPAL_DECLSPEC void mca_base_component_repository_finalize(void);
+PMIX_DECLSPEC void mca_base_component_repository_finalize(void);
 
 /**
  * @brief open the repository item and add it to the framework's component
