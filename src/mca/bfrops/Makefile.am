@@ -12,6 +12,7 @@
 #                         All rights reserved.
 # Copyright (c) 2012      Los Alamos National Security, Inc.  All rights reserved.
 # Copyright (c) 2013-2016 Intel, Inc. All rights reserved
+# Copyright (c) 2016 Cisco Systems, Inc.  All rights reserved.
 # $COPYRIGHT$
 #
 # Additional copyrights may follow
@@ -23,22 +24,21 @@ AM_CPPFLAGS = $(LTDLINCL)
 
 # main library setup
 noinst_LTLIBRARIES = libmca_bfrops.la
-libmca_ess_la_SOURCES =
-
-# pkgdata setup
-dist_pmixdata_DATA =
+libmca_bfrops_la_SOURCES =
 
 # local files
 headers = bfrops.h bfrops_types.h
-libmca_bfrops_la_SOURCES += $(headers)
+sources =
 
 # Conditionally install the header files
 if WANT_INSTALL_HEADERS
 pmixdir = $(pmixincludedir)/$(subdir)
-nobase_bfrops_HEADERS = $(headers)
+nobase_pmix_HEADERS = $(headers)
 endif
 
-include base/Makefile.am
+include base/Makefile.include
+
+libmca_bfrops_la_SOURCES += $(headers) $(sources)
 
 distclean-local:
-    rm -f base/static-components.h
+	rm -f base/static-components.h

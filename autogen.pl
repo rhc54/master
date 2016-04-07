@@ -1,6 +1,6 @@
 #!/usr/bin/env perl
 #
-# Copyright (c) 2009-2015 Cisco Systems, Inc.  All rights reserved.
+# Copyright (c) 2009-2016 Cisco Systems, Inc.  All rights reserved.
 # Copyright (c) 2010      Oracle and/or its affiliates.  All rights reserved.
 # Copyright (c) 2013      Mellanox Technologies, Inc.
 #                         All rights reserved.
@@ -168,7 +168,13 @@ sub mca_process_component {
         verbose "    Found configure.m4 file\n";
     }
 
-    $found_component->{"name"} = $component;
+    $found_component = {
+        name => $component,
+        framework_name => $framework,
+        project_name => $pname,
+        project_dir => $pdir,
+        abs_dir => $cdir,
+    };
 
     # Push the results onto the $mca_found hash array
     push(@{$mca_found->{$pname}->{$framework}->{"components"}},
@@ -248,7 +254,7 @@ sub mca_process_framework {
                      next;
                 }
 
-                verbose "--- Found $pname / $framework / $d component\n";
+                verbose "--- Found $pname / $framework / $d component: $pdir/mca/$framework/$d\n";
 
                 # Skip if specifically excluded
                 if (exists($exclude_list->{$framework}) &&
@@ -352,7 +358,7 @@ sub mca_process_project {
             # framework.
             if ("common" eq $d || !$project->{need_base} ||
                 (-f "$dir/$d/$d.h" && -d "$dir/$d/base")) {
-                verbose "\n=== Found $pname / $d framework\n";
+                verbose "\n=== Found $pname / $d framework: $pdir/mca/$d\n";
                 mca_process_framework($topdir, $project, $d);
             }
         }
@@ -384,7 +390,7 @@ sub mca_run_global {
         my $pname = $p->{name};
         # Check if this project is an MCA project (contains MCA framework)
         if (exists($mca_found->{$pname})) {
-            $str .= "$p->{name}, ";
+            $str .= "$p->{name}, $p->{dir}, ";
         }
     }
     $str =~ s/, $//;
@@ -794,6 +800,7 @@ m4_define([project_name_long], [$project_name_long])
 m4_define([project_name_short], [$project_name_short])\n";
 
 # Setup MCA
+debug_dump($projects);
 mca_run_global($projects);
 
 #---------------------------------------------------------------------------
@@ -829,17 +836,10 @@ open(M4, ">$m4_output_file") ||
 print M4 $m4;
 close(M4);
 
-# Generate the version checking script with autom4te
-#verbose "==> Generating pmix_get_version.sh\n";
-#chdir("config");
-#safe_system("autom4te --language=m4sh pmix_get_version.m4sh -o pmix_get_version.sh");
-
 # Run autoreconf
 verbose "==> Running autoreconf\n";
 my $cmd = "autoreconf -ivf --warnings=all,no-obsolete,no-override -I config";
 safe_system($cmd);
-
-patch_autotools_output(".");
 
 #---------------------------------------------------------------------------
 

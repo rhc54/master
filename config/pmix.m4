@@ -10,7 +10,7 @@ dnl Copyright (c) 2004-2005 High Performance Computing Center Stuttgart,
 dnl                         University of Stuttgart.  All rights reserved.
 dnl Copyright (c) 2004-2005 The Regents of the University of California.
 dnl                         All rights reserved.
-dnl Copyright (c) 2006-2015 Cisco Systems, Inc.  All rights reserved.
+dnl Copyright (c) 2006-2016 Cisco Systems, Inc.  All rights reserved.
 dnl Copyright (c) 2007      Sun Microsystems, Inc.  All rights reserved.
 dnl Copyright (c) 2009      IBM Corporation.  All rights reserved.
 dnl Copyright (c) 2009      Los Alamos National Security, LLC.  All rights
@@ -565,7 +565,7 @@ AC_DEFUN([PMIX_SETUP_CORE],[
     # MCA
     ##################################
 
-    opal_show_title "Modular Component Architecture (MCA) setup"
+    pmix_show_title "Modular Component Architecture (MCA) setup"
 
     AC_MSG_CHECKING([for subdir args])
     PMIX_CONFIG_SUBDIR_ARGS([pmix_subdir_args])
@@ -614,7 +614,13 @@ AC_DEFUN([PMIX_SETUP_CORE],[
 
     pmix_show_subtitle "Final output"
 
-    AC_CONFIG_FILES(pmix_config_prefix[Makefile])
+    AC_CONFIG_FILES(
+        pmix_config_prefix[Makefile]
+        pmix_config_prefix[config/Makefile]
+        pmix_config_prefix[include/Makefile]
+        pmix_config_prefix[src/Makefile]
+        pmix_config_prefix[src/mca/base/Makefile]
+        )
 
     # Success
     $2
@@ -780,6 +786,22 @@ fi
 AC_DEFINE_UNQUOTED([PMIX_ENABLE_TIMING], [$WANT_TIMING],
                    [Whether we want developer-level timing support or not])
 
+#
+# Install header files
+#
+AC_MSG_CHECKING([if want to head developer-level header files])
+AC_ARG_WITH(devel-headers,
+              AC_HELP_STRING([--with-devel-headers],
+                             [also install developer-level header files (only for internal PMIx developers, default: disabled)]))
+if test "$with_devel_headers" = "yes"; then
+    AC_MSG_RESULT([yes])
+    WANT_INSTALL_HEADERS=1
+else
+    AC_MSG_RESULT([no])
+    WANT_INSTALL_HEADERS=0
+fi
+
+AM_CONDITIONAL([WANT_INSTALL_HEADERS], [test $WANT_INSTALL_HEADERS -eq 1])
 ])dnl
 
 # Specify the symbol prefix

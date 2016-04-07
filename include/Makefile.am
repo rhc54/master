@@ -10,35 +10,35 @@
 
 # Only install the headers if we're in standalone mode
 
-EXTRA_DIST += include/private/autogen/README.txt
+EXTRA_DIST = private/autogen/README.txt
 
 if ! PMIX_EMBEDDED_MODE
 include_HEADERS = \
-        include/pmix.h \
-        include/pmix_server.h \
-        include/pmi.h \
-        include/pmi2.h
+        pmix.h \
+        pmix_server.h \
+        pmi.h \
+        pmi2.h
 
-headers += \
-        include/private/align.h \
-        include/private/hash_string.h \
-        include/private/pmix_socket_errno.h \
-        include/private/pmix_stdint.h \
-        include/private/prefetch.h \
-        include/private/types.h
+headers = \
+        private/align.h \
+        private/hash_string.h \
+        private/pmix_socket_errno.h \
+        private/pmix_stdint.h \
+        private/prefetch.h \
+        private/types.h
 include_pmixdir = $(includedir)/pmix
 include_pmix_HEADERS = \
-    include/pmix/rename.h \
-    include/pmix/pmix_common.h
+    pmix/rename.h \
+    pmix/pmix_common.h
 
 include_pmix_autogendir = $(includedir)/pmix/autogen
 include_pmix_autogen_HEADERS = \
-        include/pmix/autogen/pmix_config_top.h \
-        include/pmix/autogen/pmix_config_bottom.h
+        pmix/autogen/pmix_config_top.h \
+        pmix/autogen/pmix_config_bottom.h
 nodist_include_pmix_autogen_HEADERS = \
-        include/pmix/autogen/config.h
+        pmix/autogen/config.h
 include_private_autogendir = $(includedir)/private/autogen
 nodist_include_private_autogen_HEADERS = \
-        include/private/autogen/config.h
+        private/autogen/config.h
 
 endif ! PMIX_EMBEDDED_MODE
