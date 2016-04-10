@@ -217,7 +217,7 @@ BEGIN_C_DECLS
 
 /****    PMIX ERROR CONSTANTS    ****/
 /* PMIx errors are always negative, with 0 reserved for success */
-#define PMIX_ERROR_MIN  -52  // set equal to number of non-zero entries in enum
+#define PMIX_ERROR_MIN  -56  // set equal to number of non-zero entries in enum
 
 typedef enum {
     PMIX_ERR_UNPACK_READ_PAST_END_OF_BUFFER = PMIX_ERROR_MIN,
@@ -277,6 +277,10 @@ typedef enum {
 
     PMIX_ERR_GRP_FOUND,
     PMIX_ERR_DFLT_FOUND,
+    PMIX_ERR_NOT_AVAILABLE,
+    PMIX_ERR_FATAL,
+    PMIX_ERR_VALUE_OUT_OF_BOUNDS,
+    PMIX_ERR_PERM,
     PMIX_SUCCESS
 } pmix_status_t;
 

@@ -29,7 +29,8 @@ headers += \
         src/class/pmix_pointer_array.h \
         src/class/pmix_hash_table.h \
         src/class/pmix_hotel.h \
-        src/class/pmix_ring_buffer.h
+        src/class/pmix_ring_buffer.h \
+        src/class/pmix_value_array.h
 
 sources += \
         src/class/pmix_object.c \
@@ -37,4 +38,5 @@ sources += \
         src/class/pmix_pointer_array.c \
         src/class/pmix_hash_table.c \
         src/class/pmix_hotel.c \
-        src/class/pmix_ring_buffer.c
+        src/class/pmix_ring_buffer.c \
+        src/class/pmix_value_array.c

@@ -1,6 +1,7 @@
 dnl -*- shell-script -*-
 dnl
 dnl Copyright (c) 2010-2015 Cisco Systems, Inc.  All rights reserved.
+dnl Copyright (c) 2016      Intel, Inc. All right reserved
 dnl $COPYRIGHT$
 dnl
 dnl Additional copyrights may follow
@@ -18,7 +19,7 @@ dnl win)
 m4_define(MCA_pmix_dl_CONFIGURE_MODE, STOP_AT_FIRST)
 
 AC_DEFUN([MCA_pmix_dl_CONFIG],[
-    OPAL_HAVE_DL_SUPPORT=0
+    PMIX_HAVE_DL_SUPPORT=0
 
     # If --disable-dlopen was used, then have all the components fail
     # (we still need to configure them all so that things like "make
@@ -44,13 +45,13 @@ AC_DEFUN([MCA_pmix_dl_CONFIG],[
     AS_IF([test "$MCA_pmix_dl_STATIC_COMPONENTS" != ""],
        [ # We had a winner -- w00t!
 
-        OPAL_HAVE_DL_SUPPORT=1
+        PMIX_HAVE_DL_SUPPORT=1
         # If we added any -L flags to ADD_LDFLAGS, then we (might)
         # need to add those directories to LD_LIBRARY_PATH.
         # Otherwise, if we try to AC RUN_IFELSE anything here in
         # configure, it might die because it can't find the libraries
         # we just linked against.
-        OPAL_VAR_SCOPE_PUSH([pmix_dl_base_found_l pmix_dl_base_token pmix_dl_base_tmp pmix_dl_base_dir])
+        PMIX_VAR_SCOPE_PUSH([pmix_dl_base_found_l pmix_dl_base_token pmix_dl_base_tmp pmix_dl_base_dir])
         pmix_dl_base_found_l=0
         eval "pmix_dl_base_tmp=\$pmix_dl_${pmix_dl_winner}_ADD_LIBS"
         for pmix_dl_base_token in $pmix_dl_base_tmp; do
@@ -69,9 +70,9 @@ AC_DEFUN([MCA_pmix_dl_CONFIG],[
                        ;;
                    esac
                done])
-        OPAL_VAR_SCOPE_POP
+        PMIX_VAR_SCOPE_POP
     ])
 
-    AC_DEFINE_UNQUOTED([OPAL_HAVE_DL_SUPPORT], [$OPAL_HAVE_DL_SUPPORT],
-                       [Whether the OPAL DL framework is functional or not])
+    AC_DEFINE_UNQUOTED([PMIX_HAVE_DL_SUPPORT], [$PMIX_HAVE_DL_SUPPORT],
+                       [Whether the PMIX DL framework is functional or not])
 ])

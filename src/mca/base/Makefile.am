@@ -33,7 +33,6 @@ headers = \
         base.h \
         mca_base_component_repository.h \
         mca_base_var.h \
-        mca_base_pvar.h \
         mca_base_var_enum.h \
         mca_base_var_group.h \
         mca_base_vari.h \

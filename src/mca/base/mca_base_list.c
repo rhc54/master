@@ -17,10 +17,10 @@
  * $HEADER$
  */
 
-#include "pmix_config.h"
+#include <src/include/pmix_config.h>
 
-#include "pmix/class/pmix_list.h"
-#include "pmix/mca/base/base.h"
+#include "src/class/pmix_list.h"
+#include "src/mca/base/base.h"
 
 
 /*
@@ -33,14 +33,14 @@ static void cpl_constructor(pmix_object_t *obj);
 /*
  * Class instance of the mca_base_component_list_item_t class
  */
-OBJ_CLASS_INSTANCE(mca_base_component_list_item_t,
+PMIX_CLASS_INSTANCE(mca_base_component_list_item_t,
                    pmix_list_item_t, cl_constructor, NULL);
 
 
 /*
  * Class instance of the mca_base_component_priority_list_item_t class
  */
-OBJ_CLASS_INSTANCE(mca_base_component_priority_list_item_t,
+PMIX_CLASS_INSTANCE(mca_base_component_priority_list_item_t,
                    mca_base_component_list_item_t, cpl_constructor, NULL);
 
 

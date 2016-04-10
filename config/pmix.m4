@@ -725,6 +725,20 @@ fi
 AM_CONDITIONAL(WANT_INSTALL_HEADERS, test "$WANT_INSTALL_HEADERS" = 1)
 
 #
+# Support per-user config files?
+#
+AC_ARG_ENABLE([per-user-config-files],
+   [AC_HELP_STRING([--enable-per-user-config-files],
+      [Disable per-user configuration files, to save disk accesses during job start-up.  This is likely desirable for large jobs.  Note that this can also be acheived by environment variables at run-time.  (default: enabled)])])
+if test "$enable_per_user_config_files" = "no" ; then
+  result=0
+else
+  result=1
+fi
+AC_DEFINE_UNQUOTED([PMIX_WANT_HOME_CONFIG_FILES], [$result],
+     [Enable per-user config files])
+
+#
 # Do we want the pretty-print stack trace feature?
 #
 

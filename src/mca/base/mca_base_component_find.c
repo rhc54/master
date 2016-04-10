@@ -24,7 +24,7 @@
  * $HEADER$
  */
 
-#include "pmix_config.h"
+#include <src/include/pmix_config.h>
 
 #include <stdio.h>
 #include <string.h>
@@ -46,17 +46,17 @@
 #include <netdb.h>
 #endif
 
-#include "pmix/mca/installdirs/installdirs.h"
-#include "pmix/util/pmix_environ.h"
-#include "pmix/util/output.h"
-#include "pmix/util/argv.h"
-#include "pmix/util/show_help.h"
-#include "pmix/class/pmix_list.h"
-#include "pmix/mca/mca.h"
-#include "pmix/mca/base/base.h"
-#include "pmix/mca/base/mca_base_component_repository.h"
-#include "pmix/constants.h"
-#include "pmix/mca/dl/base/base.h"
+#include "src/mca/installdirs/installdirs.h"
+#include "src/util/pmix_environ.h"
+#include "src/util/output.h"
+#include "src/util/argv.h"
+#include "src/util/show_help.h"
+#include "src/class/pmix_list.h"
+#include "src/mca/mca.h"
+#include "src/mca/base/base.h"
+#include "src/mca/base/mca_base_component_repository.h"
+#include "pmix/pmix_common.h"
+#include "src/mca/dl/base/base.h"
 
 #if PMIX_HAVE_DL_SUPPORT
 /*
@@ -119,7 +119,7 @@ int mca_base_component_find (const char *directory, mca_base_framework_t *framew
             if ( use_component(include_mode,
                                (const char**)requested_component_names,
                                static_components[i]->mca_component_name) ) {
-                cli = OBJ_NEW(mca_base_component_list_item_t);
+                cli = PMIX_NEW(mca_base_component_list_item_t);
                 if (NULL == cli) {
                     ret = PMIX_ERR_OUT_OF_RESOURCE;
                     goto component_find_out;
@@ -207,7 +207,7 @@ int mca_base_components_filter (mca_base_framework_t *framework, uint32_t filter
 
             mca_base_component_unload (component, output_id);
 
-            OBJ_RELEASE(cli);
+            PMIX_RELEASE(cli);
         } else if (filter_flags & MCA_BASE_METADATA_PARAM_CHECKPOINT) {
             pmix_output_verbose (MCA_BASE_VERBOSE_COMPONENT, output_id,
                                  "mca: base: components_filter: "

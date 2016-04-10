@@ -11,7 +11,7 @@
  * $HEADER$
  */
 
-#include "pmix/include/pmix_config.h"
+#include <src/include/pmix_config.h>
 
 #include "pmix/include/pmix/constants.h"
 #include "pmix/util/output.h"

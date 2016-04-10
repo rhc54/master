@@ -22,21 +22,18 @@
  * $HEADER$
  */
 
-#include "pmix_config.h"
+#include <src/include/pmix_config.h>
 
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
 
-#include "pmix/class/pmix_list.h"
-#include "pmix/util/argv.h"
-#include "pmix/util/output.h"
-#include "pmix/mca/mca.h"
-#include "pmix/mca/base/base.h"
-#include "pmix/constants.h"
-#if PMIX_ENABLE_FT_CR == 1
-#include "pmix/runtime/pmix_params.h"
-#endif
+#include "src/class/pmix_list.h"
+#include "src/util/argv.h"
+#include "src/util/output.h"
+#include "src/mca/mca.h"
+#include "src/mca/base/base.h"
+#include "pmix/pmix_common.h"
 
 /*
  * Local functions
@@ -96,11 +93,6 @@ static int open_components(mca_base_framework_t *framework)
      *
      * NTH: Logic moved to mca_base_components_filter.
      */
-#if (PMIX_ENABLE_FT == 1) && (PMIX_ENABLE_FT_CR == 1)
-    if (pmix_base_distill_checkpoint_ready) {
-        open_only_flags |= MCA_BASE_METADATA_PARAM_CHECKPOINT;
-    }
-#endif  /* (PMIX_ENABLE_FT == 1) && (PMIX_ENABLE_FT_CR == 1) */
 
     /* If mca_base_framework_register_components was called with the MCA_BASE_COMPONENTS_ALL flag
        we need to trim down and close any extra components we do not want open */
@@ -159,7 +151,7 @@ static int open_components(mca_base_framework_t *framework)
                 mca_base_component_close (component, output_id);
 
 		pmix_list_remove_item (components, &cli->super);
-		OBJ_RELEASE(cli);
+		PMIX_RELEASE(cli);
 	    }
 	}
     }

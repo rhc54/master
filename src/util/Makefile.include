@@ -12,14 +12,16 @@
 #                         All rights reserved.
 # Copyright (c) 2007-2016 Cisco Systems, Inc.  All rights reserved.
 # Copyright (c) 2013      NVIDIA Corporation.  All rights reserved.
-# Copyright (c) 2013      Intel, Inc. All rights reserved
-# Copyright (c) 2013-2015 Intel, Inc. All rights reserved
+# Copyright (c) 2013-2016 Intel, Inc. All rights reserved
 # $COPYRIGHT$
 #
 # Additional copyrights may follow
 #
 # $HEADER$
 #
+
+AM_LFLAGS = -Ppmix_show_help_yy
+LEX_OUTPUT_ROOT = lex.pmix_show_help_yy
 
 # Source code files
 
@@ -35,7 +37,12 @@ headers += \
         src/util/timings.h \
         src/util/os_path.h \
         src/util/basename.h \
-        src/util/hash.h
+        src/util/hash.h \
+        src/util/keyval_parse.h \
+        src/util/cmd_line.h \
+        src/util/show_help.h \
+        src/util/show_help_lex.h \
+        src/util/path.h
 
 sources += \
         src/util/argv.c \
@@ -49,4 +56,8 @@ sources += \
         src/util/timings.c \
         src/util/os_path.c \
         src/util/basename.c \
-        src/util/hash.c
+        src/util/hash.c \
+        src/util/keyval_parse.c \
+        src/util/cmd_line.c \
+        src/util/show_help.c \
+        src/util/path.c

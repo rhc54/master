@@ -17,12 +17,12 @@
  * $HEADER$
  */
 
-#include "pmix_config.h"
+#include <src/include/pmix_config.h>
 
 #include <string.h>
 
-#include "pmix/mca/mca.h"
-#include "pmix/mca/base/base.h"
+#include "src/mca/mca.h"
+#include "src/mca/base/base.h"
 
 
 /*

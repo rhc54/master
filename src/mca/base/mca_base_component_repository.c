@@ -24,7 +24,7 @@
  */
 
 
-#include "pmix_config.h"
+#include <src/include/pmix_config.h>
 #ifdef HAVE_SYS_TYPES_H
 #include <sys/types.h>
 #endif
@@ -35,14 +35,14 @@
 #include <unistd.h>
 #endif
 
-#include "pmix/class/pmix_list.h"
-#include "pmix/mca/mca.h"
-#include "pmix/mca/base/base.h"
-#include "pmix/mca/base/mca_base_component_repository.h"
-#include "pmix/mca/dl/base/base.h"
-#include "pmix/constants.h"
-#include "pmix/class/pmix_hash_table.h"
-#include "pmix/util/basename.h"
+#include "src/class/pmix_list.h"
+#include "src/mca/mca.h"
+#include "src/mca/base/base.h"
+#include "src/mca/base/mca_base_component_repository.h"
+#include "src/mca/dl/base/base.h"
+#include "pmix/pmix_common.h"
+#include "src/class/pmix_hash_table.h"
+#include "src/util/basename.h"
 
 #if PMIX_HAVE_DL_SUPPORT
 
@@ -51,8 +51,8 @@
  */
 static void ri_constructor(mca_base_component_repository_item_t *ri);
 static void ri_destructor(mca_base_component_repository_item_t *ri);
-OBJ_CLASS_INSTANCE(mca_base_component_repository_item_t, pmix_list_item_t,
-                   ri_constructor, ri_destructor);
+PMIX_CLASS_INSTANCE(mca_base_component_repository_item_t, pmix_list_item_t,
+                    ri_constructor, ri_destructor);
 
 #endif /* PMIX_HAVE_DL_SUPPORT */
 
@@ -105,7 +105,7 @@ static int process_repository_item (const char *filename, void *data)
     ret = pmix_hash_table_get_value_ptr (&mca_base_component_repository, type,
                                          strlen (type), (void **) &component_list);
     if (PMIX_SUCCESS != ret) {
-        component_list = OBJ_NEW(pmix_list_t);
+        component_list = PMIX_NEW(pmix_list_t);
         if (NULL == component_list) {
             free (base);
             /* OOM. nothing to do but fail */
@@ -116,7 +116,7 @@ static int process_repository_item (const char *filename, void *data)
                                              strlen (type), (void *) component_list);
         if (PMIX_SUCCESS != ret) {
             free (base);
-            OBJ_RELEASE(component_list);
+            PMIX_RELEASE(component_list);
             return ret;
         }
     }
@@ -130,7 +130,7 @@ static int process_repository_item (const char *filename, void *data)
         }
     }
 
-    ri = OBJ_NEW(mca_base_component_repository_item_t);
+    ri = PMIX_NEW(mca_base_component_repository_item_t);
     if (NULL == ri) {
         free (base);
         return PMIX_ERR_OUT_OF_RESOURCE;
@@ -140,7 +140,7 @@ static int process_repository_item (const char *filename, void *data)
 
     ri->ri_path = strdup (filename);
     if (NULL == ri->ri_path) {
-        OBJ_RELEASE(ri);
+        PMIX_RELEASE(ri);
         return PMIX_ERR_OUT_OF_RESOURCE;
     }
 
@@ -232,7 +232,7 @@ int mca_base_component_repository_init(void)
     }
     pmix_dl_base_select();
 
-    OBJ_CONSTRUCT(&mca_base_component_repository, pmix_hash_table_t);
+    PMIX_CONSTRUCT(&mca_base_component_repository, pmix_hash_table_t);
     ret = pmix_hash_table_init (&mca_base_component_repository, 128);
     if (PMIX_SUCCESS != ret) {
         (void) mca_base_framework_close (&pmix_dl_base_framework);
@@ -241,7 +241,7 @@ int mca_base_component_repository_init(void)
 
     ret = mca_base_component_repository_add (mca_base_component_path);
     if (PMIX_SUCCESS != ret) {
-        OBJ_DESTRUCT(&mca_base_component_repository);
+        PMIX_DESTRUCT(&mca_base_component_repository);
         (void) mca_base_framework_close (&pmix_dl_base_framework);
         return ret;
     }
@@ -368,7 +368,7 @@ int mca_base_component_repository_open (mca_base_framework_t *framework,
 
     if (NULL != ri->ri_dlhandle) {
         pmix_output_verbose (MCA_BASE_VERBOSE_INFO, 0, "mca_base_component_repository_open: already loaded. returning cached component");
-        mitem = OBJ_NEW(mca_base_component_list_item_t);
+        mitem = PMIX_NEW(mca_base_component_list_item_t);
         if (NULL == mitem) {
             return PMIX_ERR_OUT_OF_RESOURCE;
         }
@@ -422,7 +422,7 @@ int mca_base_component_repository_open (mca_base_framework_t *framework,
             break;
         }
 
-        mitem = OBJ_NEW(mca_base_component_list_item_t);
+        mitem = PMIX_NEW(mca_base_component_list_item_t);
         if (NULL == mitem) {
             ret = PMIX_ERR_OUT_OF_RESOURCE;
             break;
@@ -484,7 +484,7 @@ int mca_base_component_repository_open (mca_base_framework_t *framework,
     } while (0);
 
     if (mitem) {
-        OBJ_RELEASE(mitem);
+        PMIX_RELEASE(mitem);
     }
 
     if (struct_name) {
@@ -529,7 +529,7 @@ void mca_base_component_repository_finalize(void)
     }
 
     (void) mca_base_framework_close(&pmix_dl_base_framework);
-    OBJ_DESTRUCT(&mca_base_component_repository);
+    PMIX_DESTRUCT(&mca_base_component_repository);
 #endif
 }
 

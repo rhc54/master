@@ -20,14 +20,14 @@
  * $HEADER$
  */
 
-#include "pmix_config.h"
+#include <src/include/pmix_config.h>
 
-#include "pmix/class/pmix_list.h"
-#include "pmix/util/output.h"
-#include "pmix/mca/mca.h"
-#include "pmix/mca/base/base.h"
-#include "pmix/mca/base/mca_base_component_repository.h"
-#include "pmix/constants.h"
+#include "src/class/pmix_list.h"
+#include "src/util/output.h"
+#include "src/mca/mca.h"
+#include "src/mca/base/base.h"
+#include "src/mca/base/mca_base_component_repository.h"
+#include "pmix/pmix_common.h"
 
 void mca_base_component_unload (const mca_base_component_t *component, int output_id)
 {
@@ -86,7 +86,7 @@ int mca_base_components_close(int output_id, pmix_list_t *components,
         mca_base_component_close (cli->cli_component, output_id);
         pmix_list_remove_item (components, &cli->super);
 
-        OBJ_RELEASE(cli);
+        PMIX_RELEASE(cli);
     }
 
     /* All done */

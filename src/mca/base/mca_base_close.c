@@ -21,13 +21,13 @@
  * $HEADER$
  */
 
-#include "pmix_config.h"
+#include <src/include/pmix_config.h>
 
-#include "pmix/util/output.h"
-#include "pmix/mca/mca.h"
-#include "pmix/mca/base/base.h"
-#include "pmix/mca/base/mca_base_component_repository.h"
-#include "pmix/constants.h"
+#include "src/util/output.h"
+#include "src/mca/mca.h"
+#include "src/mca/base/base.h"
+#include "src/mca/base/mca_base_component_repository.h"
+#include "pmix/pmix_common.h"
 
 extern int mca_base_opened;
 

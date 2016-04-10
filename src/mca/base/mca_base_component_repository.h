@@ -37,10 +37,10 @@
 #ifndef MCA_BASE_COMPONENT_REPOSITORY_H
 #define MCA_BASE_COMPONENT_REPOSITORY_H
 
-#include "pmix_config.h"
+#include <src/include/pmix_config.h>
 
-#include "pmix/mca/dl/dl.h"
-#include "pmix/mca/dl/base/base.h"
+#include "src/mca/dl/dl.h"
+#include "src/mca/dl/base/base.h"
 
 BEGIN_C_DECLS
 struct mca_base_component_repository_item_t {
@@ -59,7 +59,7 @@ struct mca_base_component_repository_item_t {
 };
 typedef struct mca_base_component_repository_item_t mca_base_component_repository_item_t;
 
-OBJ_CLASS_DECLARATION(mca_base_component_repository_item_t);
+PMIX_CLASS_DECLARATION(mca_base_component_repository_item_t);
 
 /**
  * @brief initialize the component repository

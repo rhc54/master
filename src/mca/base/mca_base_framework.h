@@ -12,9 +12,10 @@
 
 #if !defined(PMIX_MCA_BASE_FRAMEWORK_H)
 #define PMIX_MCA_BASE_FRAMEWORK_H
+#include <src/include/pmix_config.h>
 
-#include "pmix/mca/mca.h"
-#include "pmix/class/pmix_list.h"
+#include "src/mca/mca.h"
+#include "src/class/pmix_list.h"
 
 /*
  * Register and open flags

@@ -21,7 +21,7 @@
  * $HEADER$
  */
 
-#include "pmix_config.h"
+#include <src/include/pmix_config.h>
 
 #include <stdio.h>
 #include <string.h>
@@ -32,14 +32,14 @@
 #include <unistd.h>
 #endif
 
-#include "pmix/mca/installdirs/installdirs.h"
-#include "pmix/util/output.h"
-#include "pmix/util/printf.h"
-#include "pmix/mca/mca.h"
-#include "pmix/mca/base/base.h"
-#include "pmix/mca/base/mca_base_component_repository.h"
-#include "pmix/constants.h"
-#include "pmix/util/pmix_environ.h"
+#include "src/mca/installdirs/installdirs.h"
+#include "src/util/output.h"
+#include "src/util/printf.h"
+#include "src/mca/mca.h"
+#include "src/mca/base/base.h"
+#include "src/mca/base/mca_base_component_repository.h"
+#include "pmix/pmix_common.h"
+#include "src/util/pmix_environ.h"
 
 /*
  * Public variables
@@ -158,7 +158,7 @@ static void set_defaults(pmix_output_stream_t *lds)
 
     /* Load up defaults */
 
-    OBJ_CONSTRUCT(lds, pmix_output_stream_t);
+    PMIX_CONSTRUCT(lds, pmix_output_stream_t);
     lds->lds_syslog_priority = LOG_INFO;
     lds->lds_syslog_ident = "ompi";
     lds->lds_want_stderr = true;

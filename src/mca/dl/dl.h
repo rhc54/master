@@ -44,13 +44,13 @@
  * like a good solution.
  */
 
-#ifndef OPAL_MCA_DL_DL_H
-#define OPAL_MCA_DL_DL_H
+#ifndef PMIX_MCA_DL_DL_H
+#define PMIX_MCA_DL_DL_H
 
-#include "pmix_config.h"
+#include <src/include/pmix_config.h>
 
-#include "pmix/mca/mca.h"
-#include "pmix/mca/base/base.h"
+#include "src/mca/mca.h"
+#include "src/mca/base/base.h"
 
 BEGIN_C_DECLS
 
@@ -178,9 +178,9 @@ typedef struct pmix_dl_base_module_1_0_0_t pmix_dl_base_module_t;
 /**
  * Macro for use in components that are of type DL
  */
-#define OPAL_DL_BASE_VERSION_1_0_0              \
-    OPAL_MCA_BASE_VERSION_2_1_0("dl", 1, 0, 0)
+#define PMIX_DL_BASE_VERSION_1_0_0              \
+    PMIX_MCA_BASE_VERSION_2_1_0("dl", 1, 0, 0)
 
 END_C_DECLS
 
-#endif /* OPAL_MCA_DL_DL_H */
+#endif /* PMIX_MCA_DL_DL_H */

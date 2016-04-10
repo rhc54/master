@@ -147,6 +147,10 @@ const char* PMIx_Error_string(pmix_status_t errnum)
         return "GROUP-FOUND";
     case PMIX_ERR_DFLT_FOUND:
         return "DEFAULT-FOUND";
+    case PMIX_ERR_NOT_AVAILABLE:
+        return "PMIX_ERR_NOT_AVAILABLE";
+    case PMIX_ERR_NOT_FATAL:
+        return "PMIX_ERR_FATAL";
     case PMIX_SUCCESS:
         return "SUCCESS";
 
