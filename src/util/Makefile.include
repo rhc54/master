@@ -26,38 +26,38 @@ LEX_OUTPUT_ROOT = lex.pmix_show_help_yy
 # Source code files
 
 headers += \
-        src/util/argv.h \
-        src/util/error.h \
-        src/util/printf.h \
-        src/util/output.h \
-        src/util/pmix_environ.h \
-        src/util/crc.h \
-        src/util/progress_threads.h \
-        src/util/fd.h \
-        src/util/timings.h \
-        src/util/os_path.h \
-        src/util/basename.h \
-        src/util/hash.h \
-        src/util/keyval_parse.h \
-        src/util/cmd_line.h \
-        src/util/show_help.h \
-        src/util/show_help_lex.h \
-        src/util/path.h
+        util/argv.h \
+        util/error.h \
+        util/printf.h \
+        util/output.h \
+        util/pmix_environ.h \
+        util/crc.h \
+        util/progress_threads.h \
+        util/fd.h \
+        util/timings.h \
+        util/os_path.h \
+        util/basename.h \
+        util/hash.h \
+        util/keyval_parse.h \
+        util/cmd_line.h \
+        util/show_help.h \
+        util/show_help_lex.h \
+        util/path.h
 
 sources += \
-        src/util/argv.c \
-        src/util/error.c \
-        src/util/printf.c \
-        src/util/output.c \
-        src/util/pmix_environ.c \
-        src/util/crc.c \
-        src/util/progress_threads.c \
-        src/util/fd.c \
-        src/util/timings.c \
-        src/util/os_path.c \
-        src/util/basename.c \
-        src/util/hash.c \
-        src/util/keyval_parse.c \
-        src/util/cmd_line.c \
-        src/util/show_help.c \
-        src/util/path.c
+        util/argv.c \
+        util/error.c \
+        util/printf.c \
+        util/output.c \
+        util/pmix_environ.c \
+        util/crc.c \
+        util/progress_threads.c \
+        util/fd.c \
+        util/timings.c \
+        util/os_path.c \
+        util/basename.c \
+        util/hash.c \
+        util/keyval_parse.c \
+        util/cmd_line.c \
+        util/show_help.c \
+        util/path.c

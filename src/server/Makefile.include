@@ -12,11 +12,11 @@
 #
 
 headers += \
-        src/server/pmix_server_ops.h
+        server/pmix_server_ops.h
 
 sources += \
-        src/server/pmix_server.c \
-        src/server/pmix_server_ops.c \
-        src/server/pmix_server_regex.c \
-        src/server/pmix_server_listener.c \
-        src/server/pmix_server_get.c
+        server/pmix_server.c \
+        server/pmix_server_ops.c \
+        server/pmix_server_regex.c \
+        server/pmix_server_listener.c \
+        server/pmix_server_get.c

@@ -10,4 +10,4 @@
 #
 
 sources += \
-        src/common/pmix_common.c
+        common/pmix_common.c
