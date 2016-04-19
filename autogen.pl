@@ -55,14 +55,14 @@ my $include_list;
 my $exclude_list;
 
 # Minimum versions
-my $ompi_automake_version = "1.12.2";
-my $ompi_autoconf_version = "2.69";
-my $ompi_libtool_version = "2.4.2";
+my $pmix_automake_version = "1.12.2";
+my $pmix_autoconf_version = "2.69";
+my $pmix_libtool_version = "2.4.2";
 
 # Search paths
-my $ompi_autoconf_search = "autoconf";
-my $ompi_automake_search = "automake";
-my $ompi_libtoolize_search = "libtoolize;glibtoolize";
+my $pmix_autoconf_search = "autoconf";
+my $pmix_automake_search = "automake";
+my $pmix_libtoolize_search = "libtoolize;glibtoolize";
 
 # One-time setup
 my $username;
@@ -110,56 +110,15 @@ sub debug_dump {
 
 ##############################################################################
 
-# Process a "subdir", meaning that the directory isn't a component or
-# an extension; it probably just needs an autoreconf, autogen, etc.
-sub process_subdir {
-    my ($dir) = @_;
-
-    # Chdir to the subdir
-    print "\n=== Processing subdir: $dir\n";
-    my $start = Cwd::cwd();
-    chdir($dir);
-
-    # Run an action depending on what we find in that subdir
-    if (-x "autogen.pl") {
-        print "--- Found autogen.pl; running...\n";
-        safe_system("./autogen.pl");
-    } elsif (-x "autogen.sh") {
-        print "--- Found autogen.sh; running...\n";
-        safe_system("./autogen.sh");
-    } elsif (-f "configure.in" || -f "configure.ac") {
-        print "--- Found configure.in|ac; running autoreconf...\n";
-        safe_system("autoreconf -ivf");
-        print "--- Patching autotools output... :-(\n";
-    } else {
-        my_die "Found subdir, but no autogen.sh or configure.in|ac to do anything";
-    }
-
-    # Ensure that we got a good configure executable.
-    my_die "Did not generate a \"configure\" executable in $dir.\n"
-        if (! -x "configure");
-
-    # Fix known issues in Autotools output
-    patch_autotools_output($start);
-
-    # Chdir back to where we came from
-    chdir($start);
-}
-
-##############################################################################
-
 sub mca_process_component {
-    my ($topdir, $project, $framework, $component) = @_;
+    my ($framework, $component) = @_;
 
-    my $pname = $project->{name};
-    my $pdir = $project->{dir};
-    my $cdir = "$topdir/$pdir/mca/$framework/$component";
+    my $cdir = "src/mca/$framework/$component";
 
     return
         if (! -d $cdir);
 
-    # Process this directory (pretty much the same treatment as for
-    # mpiext, so it's in a sub).
+    # Process this directory
     my $found_component;
 
     # Does this directory have a configure.m4 file?
@@ -171,13 +130,11 @@ sub mca_process_component {
     $found_component = {
         name => $component,
         framework_name => $framework,
-        project_name => $pname,
-        project_dir => $pdir,
         abs_dir => $cdir,
     };
 
     # Push the results onto the $mca_found hash array
-    push(@{$mca_found->{$pdir}->{$framework}->{"components"}},
+    push(@{$mca_found->{$framework}->{"components"}},
          $found_component);
 
 }
@@ -215,15 +172,12 @@ sub ignored {
 ##############################################################################
 
 sub mca_process_framework {
-    my ($topdir, $project, $framework) = @_;
-
-    my $pname = $project->{name};
-    my $pdir = $project->{dir};
+    my ($framework) = @_;
 
     # Does this framework have a configure.m4 file?
-    my $dir = "$topdir/$pdir/mca/$framework";
+    my $dir = "src/mca/$framework";
     if (-f "$dir/configure.m4") {
-        $mca_found->{$pdir}->{$framework}->{"configure.m4"} = 1;
+        $mca_found->{$framework}->{"configure.m4"} = 1;
         verbose "    Found framework configure.m4 file\n";
     }
 
@@ -234,7 +188,7 @@ sub mca_process_framework {
     } else {
         # Look for component directories in this framework
         if (-d $dir) {
-            $mca_found->{$pdir}->{$framework}->{found} = 1;
+            $mca_found->{$framework}->{found} = 1;
             opendir(DIR, $dir) ||
                 my_die "Can't open $dir directory";
             foreach my $d (readdir(DIR)) {
@@ -254,7 +208,7 @@ sub mca_process_framework {
                      next;
                 }
 
-                verbose "--- Found $pdir / $framework / $d component: $pdir/mca/$framework/$d\n";
+                verbose "--- Found pmix / $framework / $d component: src/mca/$framework/$d\n";
 
                 # Skip if specifically excluded
                 if (exists($exclude_list->{$framework}) &&
@@ -283,7 +237,7 @@ sub mca_process_framework {
                 if (ignored("$dir/$d")) {
                     verbose "    => Ignored (found .pmix_ignore file)\n";
                 } else {
-                    mca_process_component($topdir, $project, $framework, $d);
+                    mca_process_component($framework, $d);
                 }
             }
         }
@@ -294,21 +248,21 @@ sub mca_process_framework {
 ##############################################################################
 
 sub mca_generate_framework_header(\$\@) {
-    my ($project, @frameworks) = @_;
+    my (@frameworks) = @_;
     my $framework_array_output="";
     my $framework_decl_output="";
 
     foreach my $framework (@frameworks) {
         # There is no common framework object
         if ($framework ne "common") {
-            my $framework_name = "${project}_${framework}_base_framework";
+            my $framework_name = "pmix_${framework}_base_framework";
             $framework_array_output .= "    &$framework_name,\n";
             $framework_decl_output .= "extern mca_base_framework_t $framework_name;\n";
         }
     }
 
-    my $ifdef_string = uc "${project}_FRAMEWORKS_H";
-    open(FRAMEWORKS_OUT, ">$project/include/$project/frameworks.h");
+    my $ifdef_string = uc "pmix_FRAMEWORKS_H";
+    open(FRAMEWORKS_OUT, ">src/include/frameworks.h");
     printf FRAMEWORKS_OUT "%s", "/*
  * This file is autogenerated by autogen.pl. Do not edit this file by hand.
  */
@@ -318,7 +272,7 @@ sub mca_generate_framework_header(\$\@) {
 #include <pmix/mca/base/mca_base_framework.h>
 
 $framework_decl_output
-static mca_base_framework_t *${project}_frameworks[] = {
+static mca_base_framework_t *pmix_frameworks[] = {
 $framework_array_output    NULL
 };
 
@@ -329,75 +283,41 @@ $framework_array_output    NULL
 ##############################################################################
 
 sub mca_process_project {
-    my ($topdir, $project) = @_;
 
-    my $pname = $project->{name};
-    my $pdir = $project->{dir};
+    # Look for framework directories
+    my $dir = "src/mca";
+    opendir(DIR, $dir) ||
+        my_die "Can't open $dir directory";
+    my @my_dirs = readdir(DIR);
+    @my_dirs = sort(@my_dirs);
 
-    # Does this project have a configure.m4 file?
-    if (-f "$topdir/$pdir/configure.m4") {
-        $mca_found->{$pdir}->{"configure.m4"} = 1;
-        verbose "    Found $topdir/$pdir/configure.m4 file\n";
-    }
+    foreach my $d (@my_dirs) {
+        # Skip any non-directory, "base", or any dir that begins with "."
+        next
+            if (! -d "$dir/$d" || $d eq "base" || substr($d, 0, 1) eq ".");
 
-    # Look for framework directories in this project
-    my $dir = "$topdir/$pdir/mca";
-    if (-d $dir) {
-        opendir(DIR, $dir) ||
-            my_die "Can't open $dir directory";
-        my @my_dirs = readdir(DIR);
-        @my_dirs = sort(@my_dirs);
-
-        foreach my $d (@my_dirs) {
-            # Skip any non-directory, "base", or any dir that begins with "."
-            next
-                if (! -d "$dir/$d" || $d eq "base" || substr($d, 0, 1) eq ".");
-
-            # If this directory has a $dir.h file and a base/
-            # subdirectory, or its name is "common", then it's a
-            # framework.
-            if ("common" eq $d || !$project->{need_base} ||
-                (-f "$dir/$d/$d.h" && -d "$dir/$d/base")) {
-                verbose "\n=== Found $pdir / $d framework: $pdir/mca/$d\n";
-                mca_process_framework($topdir, $project, $d);
-            }
+        # If this directory has a $dir.h file and a base/
+        # subdirectory, or its name is "common", then it's a
+        # framework.
+        if ("common" eq $d ||
+            (-f "$dir/$d/$d.h" && -d "$dir/$d/base")) {
+            verbose "\n=== Found pmix framework: src/mca/$d\n";
+            mca_process_framework($d);
         }
-        closedir(DIR);
     }
+    closedir(DIR);
 }
 
 ##############################################################################
 
 sub mca_run_global {
-    my ($projects) = @_;
 
-    # For each project, go find a list of frameworks, and for each of
+    # Go find a list of frameworks, and for each of
     # those, go find a list of components.
-    my $topdir = Cwd::cwd();
-    foreach my $p (@$projects) {
-        if (-d "$topdir/$p->{dir}") {
-            verbose "\n*** Found $p->{name} project\n";
-            mca_process_project($topdir, $p);
-        }
-    }
+    mca_process_project();
 
     # Debugging output
     debug_dump($mca_found);
-
-    # Save (just) the list of MCA projects in the m4 file
-    my $str;
-    foreach my $p (@$projects) {
-        my $pname = $p->{name};
-        my $pdir = $p->{dir};
-        # Check if this project is an MCA project (contains MCA framework)
-        if (exists($mca_found->{$pdir})) {
-            $str .= "$p->{dir}, ";
-        }
-    }
-    $str =~ s/, $//;
-    $m4 .= "\ndnl List of MCA projects found by autogen.pl
-m4_define([mca_project_list], [$str])\n";
-    #-----------------------------------------------------------------------
 
     $m4 .= "\n$dnl_line
 $dnl_line
@@ -409,86 +329,76 @@ dnl MCA information\n";
     # configure.m4's.
     my @includes;
 
-    # Next, for each project, write the list of frameworks
-    foreach my $p (@$projects) {
+    # Write the list of frameworks
+    my $frameworks_comma;
 
-        my $pname = $p->{name};
-        my $pdir = $p->{dir};
+    # Print out project-level info
+    my @mykeys = keys(%{$mca_found});
+    @mykeys = sort(@mykeys);
 
-        if (exists($mca_found->{$pdir})) {
-            my $frameworks_comma;
+    verbose("FOUND FRAMEWORKS @mykeys");
 
-            # Does this project have a configure.m4 file?
-            push(@includes, "$pdir/configure.m4")
-                if (exists($mca_found->{$p}->{"configure.m4"}));
+    # Ensure that the "common" framework is listed first
+    # (if it exists)
+    my @tmp;
+    push(@tmp, "common")
+        if (grep(/common/, @mykeys));
+    foreach my $f (@mykeys) {
+        push(@tmp, $f)
+            if ($f ne "common");
+    }
+    @mykeys = @tmp;
 
-            # Print out project-level info
-            my @mykeys = keys(%{$mca_found->{$pdir}});
-            @mykeys = sort(@mykeys);
+    foreach my $f (@mykeys) {
+        $frameworks_comma .= ", $f";
 
-            # Ensure that the "common" framework is listed first
-            # (if it exists)
-            my @tmp;
-            push(@tmp, "common")
-                if (grep(/common/, @mykeys));
-            foreach my $f (@mykeys) {
-                push(@tmp, $f)
-                    if ($f ne "common");
-            }
-            @mykeys = @tmp;
+        # Does this framework have a configure.m4 file?
+        push(@includes, "src/mca/$f/configure.m4")
+            if (exists($mca_found->{$f}->{"configure.m4"}));
 
-            foreach my $f (@mykeys) {
-                $frameworks_comma .= ", $f";
+        # This framework does have a Makefile.am (or at least,
+        # it should!)
+        my_die "Missing src/mca/$f/Makefile.am"
+            if (! -f "src/mca/$f/Makefile.am");
+    }
+    $frameworks_comma =~ s/^, //;
 
-                # Does this framework have a configure.m4 file?
-                push(@includes, "$pdir/mca/$f/configure.m4")
-                    if (exists($mca_found->{$pdir}->{$f}->{"configure.m4"}));
+    &mca_generate_framework_header("src", @mykeys);
 
-                # This framework does have a Makefile.am (or at least,
-                # it should!)
-                my_die "Missing $pdir/mca/$f/Makefile.am"
-                    if (! -f "$pdir/mca/$f/Makefile.am");
-            }
-            $frameworks_comma =~ s/^, //;
+    $m4 .= "$dnl_line
 
-            &mca_generate_framework_header($pdir, @mykeys);
-
-            $m4 .= "$dnl_line
-
-dnl Frameworks in the $pdir project and their corresponding directories
-m4_define([mca_${pdir}_framework_list], [$frameworks_comma])
+dnl Frameworks in the pmix project and their corresponding directories
+m4_define([mca_pmix_framework_list], [$frameworks_comma])
 
 ";
 
-            # Print out framework-level info
-            foreach my $f (@mykeys) {
-                my $components;
-                my $m4_config_component_list;
-                my $no_config_component_list;
+    # Print out framework-level info
+    foreach my $f (@mykeys) {
+        my $components;
+        my $m4_config_component_list;
+        my $no_config_component_list;
 
-                # Troll through each of the found components
-                foreach my $comp (@{$mca_found->{$pdir}->{$f}->{components}}) {
-                    my $c = $comp->{name};
-                    $components .= "$c ";
+        # Troll through each of the found components
+        foreach my $comp (@{$mca_found->{$f}->{components}}) {
+            my $c = $comp->{name};
+            $components .= "$c ";
 
-                    # Does this component have a configure.m4 file?
-                    if (exists($comp->{"configure.m4"})) {
-                        push(@includes, "$pdir/mca/$f/$c/configure.m4");
-                        $m4_config_component_list .= ", $c";
-                    } else {
-                        $no_config_component_list .= ", $c";
-                    }
-                }
-                $m4_config_component_list =~ s/^, //;
-                $no_config_component_list =~ s/^, //;
-
-                $m4 .= "dnl Components in the $pdir / $f framework
-m4_define([mca_${pdir}_${f}_m4_config_component_list], [$m4_config_component_list])
-m4_define([mca_${pdir}_${f}_no_config_component_list], [$no_config_component_list])
-
-";
+            # Does this component have a configure.m4 file?
+            if (exists($comp->{"configure.m4"})) {
+                push(@includes, "src/mca/$f/$c/configure.m4");
+                $m4_config_component_list .= ", $c";
+            } else {
+                $no_config_component_list .= ", $c";
             }
         }
+        $m4_config_component_list =~ s/^, //;
+        $no_config_component_list =~ s/^, //;
+
+        $m4 .= "dnl Components in the pmix / $f framework
+m4_define([mca_pmix_${f}_m4_config_component_list], [$m4_config_component_list])
+m4_define([mca_pmix_${f}_no_config_component_list], [$no_config_component_list])
+
+";
     }
 
     # List out all the m4_include
@@ -612,9 +522,9 @@ I need at least $req_version, but only found the following versions:\n\n";
 Please make sure you are using at least the following versions of the
 tools:
 
-    GNU Autoconf: $ompi_autoconf_version
-    GNU Automake: $ompi_automake_version
-    GNU Libtool: $ompi_libtool_version
+    GNU Autoconf: $pmix_autoconf_version
+    GNU Automake: $pmix_automake_version
+    GNU Libtool: $pmix_libtool_version
 =================================================================\n";
     my_exit(1);
 }
@@ -710,7 +620,7 @@ $dnl_line\n\n";
 
 #---------------------------------------------------------------------------
 
-# Verify that we're in the PMIx root directorty by checking for a token file.
+# Verify that we're in the PMIx root directory by checking for a token file.
 
 my_die "Not at the root directory of an PMIx source tree"
     if (! -f "config/pmix_mca.m4");
@@ -732,9 +642,9 @@ verbose "PMIx autogen (buckle up!)
 $step. Checking tool versions\n\n";
 
 # Check the autotools revision levels
-&find_and_check("autoconf", $ompi_autoconf_search, $ompi_autoconf_version);
-&find_and_check("libtool", $ompi_libtoolize_search, $ompi_libtool_version);
-&find_and_check("automake", $ompi_automake_search, $ompi_automake_version);
+&find_and_check("autoconf", $pmix_autoconf_search, $pmix_autoconf_version);
+&find_and_check("libtool", $pmix_libtoolize_search, $pmix_libtool_version);
+&find_and_check("automake", $pmix_automake_search, $pmix_automake_version);
 
 #---------------------------------------------------------------------------
 
@@ -775,9 +685,9 @@ if ($include_arg) {
 
 #---------------------------------------------------------------------------
 
-# Find projects, frameworks, components
+# Find frameworks, components
 ++$step;
-verbose "\n$step. Searching for projects, MCA frameworks, and MCA components\n";
+verbose "\n$step. Searching for MCA frameworks and components\n";
 
 my $ret;
 
@@ -787,36 +697,12 @@ if (! (-f "VERSION" && -f "configure.ac" && -f $topdir_file)) {
     my_exit(1);
 }
 
-# Top-level projects to examine
-my $projects;
-push(@{$projects}, { name => "pmix", dir => "src", need_base => 1 });
-
-$m4 .= "dnl Separate m4 define for each project\n";
-foreach my $p (@$projects) {
-    $m4 .= "m4_define([project_$p->{name}], [1])\n";
-}
-
 $m4 .= "\ndnl Project names
 m4_define([project_name_long], [$project_name_long])
 m4_define([project_name_short], [$project_name_short])\n";
 
 # Setup MCA
-debug_dump($projects);
-mca_run_global($projects);
-
-#---------------------------------------------------------------------------
-
-# Process all subdirs that we found in previous steps
-++$step;
-verbose "\n$step. Processing autogen.subdirs directories\n";
-
-if ($#subdirs >= 0) {
-    foreach my $d (@subdirs) {
-        process_subdir($d);
-    }
-} else {
-    print "<none found>\n";
-}
+mca_run_global();
 
 #---------------------------------------------------------------------------
 

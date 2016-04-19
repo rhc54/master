@@ -28,7 +28,7 @@ AC_DEFUN([MCA_pmix_dl_CONFIG],[
     AS_IF([test "$enable_dlopen" = "no"],
           [want_dl=0], [want_dl=1])
 
-    MCA_CONFIGURE_FRAMEWORK([pmix], [dl], [$want_dl])
+    MCA_CONFIGURE_FRAMEWORK([dl], [$want_dl])
 
     # If we found no suitable static dl component and dlopen support
     # was not specifically disabled, this is an error.
