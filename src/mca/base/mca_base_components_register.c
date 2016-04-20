@@ -27,15 +27,15 @@
 #include <string.h>
 #include <stdlib.h>
 
-#include "pmix/class/pmix_list.h"
-#include "pmix/util/argv.h"
-#include "pmix/util/output.h"
-#include "pmix/util/show_help.h"
-#include "pmix/mca/mca.h"
-#include "pmix/mca/base/base.h"
-#include "pmix/mca/base/mca_base_framework.h"
-#include "pmix/mca/base/mca_base_component_repository.h"
-#include "pmix/constants.h"
+#include "src/class/pmix_list.h"
+#include "src/util/argv.h"
+#include "src/util/output.h"
+#include "src/util/show_help.h"
+#include "src/mca/mca.h"
+#include "src/mca/base/base.h"
+#include "src/mca/base/mca_base_framework.h"
+#include "src/mca/base/mca_base_component_repository.h"
+#include "pmix/pmix_common.h"
 
 /*
  * Local functions
@@ -131,7 +131,7 @@ static int register_components(mca_base_framework_t *framework)
             pmix_list_remove_item (&framework->framework_components, &cli->super);
 
             /* Release this list item */
-            OBJ_RELEASE(cli);
+            PMIX_RELEASE(cli);
             continue;
         }
 

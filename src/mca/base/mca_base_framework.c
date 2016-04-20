@@ -13,12 +13,12 @@
 
 #include <src/include/pmix_config.h>
 
-#include "pmix/include/pmix/constants.h"
-#include "pmix/util/output.h"
+#include "pmix/pmix_common.h"
+#include "src/util/output.h"
 
 #include "mca_base_framework.h"
 #include "mca_base_var.h"
-#include "pmix/mca/base/base.h"
+#include "src/mca/base/base.h"
 
 bool mca_base_framework_is_registered (struct mca_base_framework_t *framework)
 {
@@ -66,7 +66,7 @@ int mca_base_framework_register (struct mca_base_framework_t *framework,
         return PMIX_SUCCESS;
     }
 
-    OBJ_CONSTRUCT(&framework->framework_components, pmix_list_t);
+    PMIX_CONSTRUCT(&framework->framework_components, pmix_list_t);
 
     if (framework->framework_flags & MCA_BASE_FRAMEWORK_FLAG_NO_DSO) {
         flags |= MCA_BASE_REGISTER_STATIC_ONLY;
@@ -227,14 +227,14 @@ int mca_base_framework_close (struct mca_base_framework_t *framework) {
             cli = (mca_base_component_list_item_t*) item;
             mca_base_component_unload(cli->cli_component,
                                       framework->framework_output);
-            OBJ_RELEASE(item);
+            PMIX_RELEASE(item);
         }
         ret = PMIX_SUCCESS;
     }
 
     framework->framework_flags &= ~(MCA_BASE_FRAMEWORK_FLAG_REGISTERED | MCA_BASE_FRAMEWORK_FLAG_OPEN);
 
-    OBJ_DESTRUCT(&framework->framework_components);
+    PMIX_DESTRUCT(&framework->framework_components);
 
     framework_close_output (framework);
 

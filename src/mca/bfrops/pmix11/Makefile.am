@@ -11,7 +11,7 @@
 # Copyright (c) 2004-2005 The Regents of the University of California.
 #                         All rights reserved.
 # Copyright (c) 2012      Los Alamos National Security, Inc.  All rights reserved.
-# Copyright (c) 2013-2015 Intel, Inc. All rights reserved
+# Copyright (c) 2013-2016 Intel, Inc. All rights reserved
 # $COPYRIGHT$
 #
 # Additional copyrights may follow
@@ -19,8 +19,10 @@
 # $HEADER$
 #
 
-headers =
+headers = bfrop_pmix11.h
 sources = \
+        bfrop_pmix11_component.c \
+        bfrop_pmix11.c \
         copy.c \
         pack.c \
         print.c \
@@ -34,10 +36,10 @@ if MCA_BUILD_pmix_bfrops_pmix11_DSO
 lib =
 lib_sources =
 component = mca_pmix_bfrops_pmix11.la
-component_sources = $(sources)
+component_sources = $(headers) $(sources)
 else
 lib = libmca_pmix_bfrops_pmix11.la
-lib_sources = $(sources)
+lib_sources = $(headers) $(sources)
 component =
 component_sources =
 endif

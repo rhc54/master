@@ -70,7 +70,7 @@ static void save_value(const char *name, const char *value)
 
     if (!found) {
         /* We didn't already have the param, so append it to the list */
-        fv = OBJ_NEW(mca_base_var_file_value_t);
+        fv = PMIX_NEW(mca_base_var_file_value_t);
         if (NULL == fv) {
             return;
         }

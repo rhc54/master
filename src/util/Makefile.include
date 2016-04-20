@@ -39,7 +39,6 @@ headers += \
         util/basename.h \
         util/hash.h \
         util/keyval_parse.h \
-        util/cmd_line.h \
         util/show_help.h \
         util/show_help_lex.h \
         util/path.h
@@ -58,6 +57,5 @@ sources += \
         util/basename.c \
         util/hash.c \
         util/keyval_parse.c \
-        util/cmd_line.c \
         util/show_help.c \
         util/path.c

@@ -35,7 +35,7 @@
 
 #include "src/util/error.h"
 #include "src/include/pmix_globals.h"
-#include "src/buffer_ops/buffer_ops.h"
+#include "src/mca/bfrops/bfrops.h"
 
 const char* PMIx_Error_string(pmix_status_t errnum)
 {
@@ -149,8 +149,12 @@ const char* PMIx_Error_string(pmix_status_t errnum)
         return "DEFAULT-FOUND";
     case PMIX_ERR_NOT_AVAILABLE:
         return "PMIX_ERR_NOT_AVAILABLE";
-    case PMIX_ERR_NOT_FATAL:
+    case PMIX_ERR_FATAL:
         return "PMIX_ERR_FATAL";
+    case PMIX_ERR_VALUE_OUT_OF_BOUNDS:
+        return "PMIX_ERR_VALUE_OUT_OF_BOUNDS";
+    case PMIX_ERR_PERM:
+        return "PMIX_ERR_PERM";
     case PMIX_SUCCESS:
         return "SUCCESS";
 
@@ -247,7 +251,6 @@ pmix_status_t pmix_lookup_errhandler(pmix_info_t info[], size_t ninfo,
     bool exact_given = false;
     int given = -1;
     pmix_status_t status;
-    char *grp;
 
     /* scan the incoming specification to see if it is a general errhandler,
      * a group errhandler, or an error handler for a specific status. Only
@@ -265,7 +268,6 @@ pmix_status_t pmix_lookup_errhandler(pmix_info_t info[], size_t ninfo,
             } else if (0 == strcmp(info[n].key, "pmix.errgroup")) {
                 /* this is a group errhandler */
                 given = 2;
-                grp = info[n].value.data.string;
                 break;
             }
         }

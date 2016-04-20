@@ -6,7 +6,7 @@
  *                         reserved.
  * Copyright (c) 2011-2014 Los Alamos National Security, LLC.  All rights
  *                         reserved.
- * Copyright (c) 2014-2015 Intel, Inc. All rights reserved.
+ * Copyright (c) 2014-2016 Intel, Inc. All rights reserved.
  * Copyright (c) 2015      Research Organization for Information Science
  *                         and Technology (RIST). All rights reserved.
  * Copyright (c) 2016      Mellanox Technologies, Inc.
@@ -30,7 +30,7 @@
 #include "src/include/pmix_globals.h"
 #include "src/class/pmix_hash_table.h"
 #include "src/class/pmix_pointer_array.h"
-#include "src/buffer_ops/buffer_ops.h"
+#include "src/mca/bfrops/bfrops.h"
 #include "src/util/error.h"
 #include "src/util/output.h"
 

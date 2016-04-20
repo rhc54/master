@@ -316,8 +316,8 @@ typedef struct mca_base_component_data_2_0_0_t mca_base_component_data_2_0_0_t;
     MCA_BASE_MAKE_VERSION(type, type_major, type_minor, type_release)
 
 
-#define PMIX_MCA_BASE_VERSION_2_1_0(type, type_major, type_minor, type_release) \
-    MCA_BASE_VERSION_2_1_0("pmix", PMIX_MAJOR_VERSION, PMIX_MINOR_VERSION,      \
+#define PMIX_MCA_BASE_VERSION_1_0_0(type, type_major, type_minor, type_release) \
+    MCA_BASE_VERSION_1_0_0("pmix", PMIX_MAJOR_VERSION, PMIX_MINOR_VERSION,      \
                            PMIX_RELEASE_VERSION, type, type_major, type_minor,  \
                            type_release)
 

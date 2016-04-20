@@ -45,7 +45,7 @@
 #include PMIX_EVENT_HEADER
 
 #include "src/class/pmix_list.h"
-#include "src/buffer_ops/buffer_ops.h"
+#include "src/mca/bfrops/bfrops.h"
 #include "src/util/argv.h"
 #include "src/util/error.h"
 #include "src/util/output.h"

@@ -36,7 +36,9 @@
 #include <src/include/types.h>
 
 #include "src/include/pmix_globals.h"
-#include "bfrops_types.h"
+#include "src/mca/mca.h"
+
+#include "bfrop_types.h"
 
 BEGIN_C_DECLS
 
@@ -294,6 +296,42 @@ typedef pmix_status_t (*pmix_bfrop_copy_fn_t)(void **dest, void *src, pmix_data_
 typedef pmix_status_t (*pmix_bfrop_print_fn_t)(char **output, char *prefix, void *src, pmix_data_type_t type);
 
 /**
+ * Transfer a value from one pmix_value_t to another. Ordinarily,
+ * this would be executed as a base function. However, it is
+ * possible that future versions may add new data types, and
+ * thus the xfer function may differ
+ *
+ * @retval PMIX_SUCCESS The value was successfully transferred
+ *
+ * @retval PMIX_ERROR(s) An appropriate error code
+ */
+typedef pmix_status_t (*pmix_bfrop_value_xfer_fn_t)(pmix_value_t *kv, pmix_value_t *src);
+
+
+/**
+ * Load data into a pmix_value_t object. Again, this is provided
+ * as a component function to support different data types
+ */
+typedef void (*pmix_bfrop_value_load_fn_t)(pmix_value_t *v, void *data,
+                                           pmix_data_type_t type);
+
+/**
+ * Unload data from a pmix_value_t object
+ *
+ * @retval PMIX_SUCCESS The value was successfully unloaded
+ *
+ * @retval PMIX_ERROR(s) An appropriate error code
+ */
+typedef pmix_status_t (*pmix_bfrop_value_unload_fn_t)(pmix_value_t *kv, void **data,
+                                                      size_t *sz, pmix_data_type_t type);
+
+/**
+ * Compare two pmix_value_t structs and return true if
+ * they are equal, false otherwise
+ */
+typedef bool (*pmix_bfrop_value_cmp_fn_t)(pmix_value_t *p1, pmix_value_t *p2);
+
+/**
  * Base structure for the BFROP
  *
  * Base module structure for the BFROP - presents the required function
@@ -305,10 +343,30 @@ struct pmix_bfrop_t {
     pmix_bfrop_copy_fn_t              copy;
     pmix_bfrop_print_fn_t             print;
     pmix_bfrop_copy_payload_fn_t      copy_payload;
+    pmix_bfrop_value_xfer_fn_t        value_xfer;
+    pmix_bfrop_value_load_fn_t        value_load;
+    pmix_bfrop_value_unload_fn_t      value_unload;
+    pmix_bfrop_value_cmp_fn_t         value_cmp;
 };
 typedef struct pmix_bfrop_t pmix_bfrop_t;
 
 extern pmix_bfrop_t pmix_bfrop;  /* holds bfrop function pointers */
+
+/*
+ * the standard component data structure
+ */
+struct pmix_bfrops_base_component_2_0_0_t {
+    mca_base_component_t base_version;
+    mca_base_component_data_t base_data;
+};
+typedef struct pmix_bfrops_base_component_2_0_0_t pmix_bfrops_base_component_2_0_0_t;
+typedef struct pmix_bfrops_base_component_2_0_0_t pmix_bfrops_base_component_t;
+
+/*
+ * Macro for use in components that are of type bfrops
+ */
+#define PMIX_BFROPS_BASE_VERSION_1_0_0 \
+    PMIX_MCA_BASE_VERSION_1_0_0("bfrops", 1, 0, 0)
 
 END_C_DECLS
 

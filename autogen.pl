@@ -336,8 +336,6 @@ dnl MCA information\n";
     my @mykeys = keys(%{$mca_found});
     @mykeys = sort(@mykeys);
 
-    verbose("FOUND FRAMEWORKS @mykeys");
-
     # Ensure that the "common" framework is listed first
     # (if it exists)
     my @tmp;

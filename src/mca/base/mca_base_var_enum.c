@@ -33,13 +33,13 @@
 
 static void mca_base_var_enum_constructor (mca_base_var_enum_t *enumerator);
 static void mca_base_var_enum_destructor (mca_base_var_enum_t *enumerator);
-OBJ_CLASS_INSTANCE(mca_base_var_enum_t, pmix_object_t, mca_base_var_enum_constructor,
-                   mca_base_var_enum_destructor);
+PMIX_CLASS_INSTANCE(mca_base_var_enum_t, pmix_object_t, mca_base_var_enum_constructor,
+                    mca_base_var_enum_destructor);
 
 static void mca_base_var_enum_flag_constructor (mca_base_var_enum_flag_t *enumerator);
 static void mca_base_var_enum_flag_destructor (mca_base_var_enum_flag_t *enumerator);
-OBJ_CLASS_INSTANCE(mca_base_var_enum_flag_t, pmix_object_t, mca_base_var_enum_flag_constructor,
-                   mca_base_var_enum_flag_destructor);
+PMIX_CLASS_INSTANCE(mca_base_var_enum_flag_t, pmix_object_t, mca_base_var_enum_flag_constructor,
+                    mca_base_var_enum_flag_destructor);
 
 static int enum_dump (mca_base_var_enum_t *self, char **out);
 static int enum_get_count (mca_base_var_enum_t *self, int *count);
@@ -230,7 +230,7 @@ int mca_base_var_enum_create (const char *name, const mca_base_var_enum_value_t 
 
     *enumerator = NULL;
 
-    new_enum = OBJ_NEW(mca_base_var_enum_t);
+    new_enum = PMIX_NEW(mca_base_var_enum_t);
     if (NULL == new_enum) {
         return PMIX_ERR_OUT_OF_RESOURCE;
     }
@@ -246,7 +246,7 @@ int mca_base_var_enum_create (const char *name, const mca_base_var_enum_value_t 
     /* make a copy of the values */
     new_enum->enum_values = calloc (new_enum->enum_value_count + 1, sizeof (*new_enum->enum_values));
     if (NULL == new_enum->enum_values) {
-        OBJ_RELEASE(new_enum);
+        PMIX_RELEASE(new_enum);
         return PMIX_ERR_OUT_OF_RESOURCE;
     }
 
@@ -267,7 +267,7 @@ int mca_base_var_enum_create_flag (const char *name, const mca_base_var_enum_val
 
     *enumerator = NULL;
 
-    new_enum = OBJ_NEW(mca_base_var_enum_flag_t);
+    new_enum = PMIX_NEW(mca_base_var_enum_flag_t);
     if (NULL == new_enum) {
         return PMIX_ERR_OUT_OF_RESOURCE;
     }
@@ -283,7 +283,7 @@ int mca_base_var_enum_create_flag (const char *name, const mca_base_var_enum_val
     /* make a copy of the values */
     new_enum->enum_flags = calloc (new_enum->super.enum_value_count + 1, sizeof (*new_enum->enum_flags));
     if (NULL == new_enum->enum_flags) {
-        OBJ_RELEASE(new_enum);
+        PMIX_RELEASE(new_enum);
         return PMIX_ERR_OUT_OF_RESOURCE;
     }
 
@@ -515,6 +515,7 @@ static int enum_value_from_string_flag (mca_base_var_enum_t *self, const char *s
         }
     }
 
+    pmix_argv_free (flags);
     *value_out = flag;
 
     return PMIX_SUCCESS;

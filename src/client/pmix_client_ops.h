@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015      Intel, Inc. All rights reserved.
+ * Copyright (c) 2015-2016 Intel, Inc. All rights reserved.
  * $COPYRIGHT$
  *
  * Additional copyrights may follow
@@ -13,7 +13,7 @@
 #include <src/include/pmix_config.h>
 
 
-#include "src/buffer_ops/buffer_ops.h"
+#include "src/mca/bfrops/bfrops.h"
 #include "src/class/pmix_hash_table.h"
 #include "src/usock/usock.h"
 

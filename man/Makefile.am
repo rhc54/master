@@ -33,10 +33,28 @@ man_MANS = \
 
 EXTRA_DIST = $(man_MANS)
 
-nroff:
-	@for file in $(man_MANS); do \
-	    source=`echo $$file | sed -e 's@/man[0-9]@@'`; \
-	    $(top_srcdir)contrib/md2nroff.pl --source=$$source.md; \
-	done
+man/man3/pmix_init.3:
+    $(top_srcdir)contrib/md2nroff.pl --source=man/pmix_init.3.md;
+
+man/man3/pmix_finalize.3:
+    $(top_srcdir)contrib/md2nroff.pl --source=man/pmix_finalize.3.md;
+
+man/man3/pmix_initialized.3:
+    $(top_srcdir)contrib/md2nroff.pl --source=man/pmix_initialized.3.md;
+
+man/man3/pmix_abort.3:
+    $(top_srcdir)contrib/md2nroff.pl --source=man/pmix_abort.3.md;
+
+man/man3/pmix_put.3:
+    $(top_srcdir)contrib/md2nroff.pl --source=man/pmix_put.3.md;
+
+man/man3/pmix_commit.3:
+    $(top_srcdir)contrib/md2nroff.pl --source=man/pmix_commit.3.md;
+
+man/man7/pmix.7:
+    $(top_srcdir)contrib/md2nroff.pl --source=man/pmix.7.md;
+
+man/man7/pmix_constants.7:
+    $(top_srcdir)contrib/md2nroff.pl --source=man/pmix_constants.7.md;
 
 endif # !PMIX_EMBEDDED_MODE

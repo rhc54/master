@@ -35,7 +35,7 @@
 #include <ctype.h>
 #include PMIX_EVENT_HEADER
 
-#include "src/buffer_ops/types.h"
+#include "src/mca/bfrops/bfrop_types.h"
 #include "src/class/pmix_hash_table.h"
 #include "src/class/pmix_list.h"
 

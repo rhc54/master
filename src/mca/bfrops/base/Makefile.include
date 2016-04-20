@@ -12,7 +12,7 @@
 #                         All rights reserved.
 # Copyright (c) 2012      Los Alamos National Security, Inc.  All rights reserved.
 # Copyright (c) 2013-2016 Intel, Inc. All rights reserved
-# Copyright (c) 2016 Cisco Systems, Inc.  All rights reserved.
+# Copyright (c) 2016      Cisco Systems, Inc.  All rights reserved.
 # $COPYRIGHT$
 #
 # Additional copyrights may follow
@@ -27,6 +27,6 @@ headers += \
          base/base.h
 
 sources += \
-        base/bfrop_frame.c \
+        base/bfrop_base_frame.c \
         base/bfrop_base_fns.c \
-        base/bfrop_base_stubs.c
+        base/bfrop_base_select.c

@@ -37,7 +37,6 @@
 #include "src/mca/mca.h"
 #include "src/mca/base/mca_base_var.h"
 #include "src/mca/base/mca_base_framework.h"
-#include "src/util/cmd_line.h"
 #include "src/util/output.h"
 
 BEGIN_C_DECLS
@@ -153,14 +152,6 @@ PMIX_DECLSPEC int mca_base_is_component_required(pmix_list_t *components_availab
                                                  mca_base_component_t *component,
                                                  bool exclusive,
                                                  bool *is_required);
-
-/* mca_base_cmd_line.c */
-
-PMIX_DECLSPEC int mca_base_cmd_line_setup(pmix_cmd_line_t *cmd);
-PMIX_DECLSPEC int mca_base_cmd_line_process_args(pmix_cmd_line_t *cmd,
-                                                 char ***app_env,
-                                                 char ***global_env);
-PMIX_DECLSPEC void mca_base_cmd_line_wrap_args(char **args);
 
 /* mca_base_component_compare.c */
 

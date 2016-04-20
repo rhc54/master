@@ -53,7 +53,7 @@
  * local variables
  */
 static pmix_pointer_array_t mca_base_vars;
-static const char *mca_prefix = PMIX_MCA_PREFIX;
+static const char *mca_prefix = "PMIX_MCA_";
 static char *home = NULL;
 static char *cwd  = NULL;
 bool mca_base_var_initialized = false;

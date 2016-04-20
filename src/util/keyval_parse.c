@@ -131,7 +131,7 @@ static int parse_line(void)
             free(key_buffer);
             key_buffer_len = 0;
             key_buffer = NULL;
-            return PMIX_ERR_TEMP_OUT_OF_RESOURCE;
+            return PMIX_ERR_OUT_OF_RESOURCE;
         }
         key_buffer = tmp;
     }
@@ -254,7 +254,7 @@ static int save_param_name (void)
             free(key_buffer);
             key_buffer_len = 0;
             key_buffer = NULL;
-            return PMIX_ERR_TEMP_OUT_OF_RESOURCE;
+            return PMIX_ERR_OUT_OF_RESOURCE;
         }
         key_buffer = tmp;
     }

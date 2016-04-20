@@ -71,7 +71,7 @@
 #endif
 
 
-#include "pmix_stdint.h"
+#include "src/include/pmix_stdint.h"
 #include "src/util/output.h"
 #include "src/util/path.h"
 #include "src/util/os_path.h"
@@ -89,8 +89,9 @@
  * no struct statfs (!).  So check to make sure we have struct statfs
  * before allowing the use of statfs().
  */
-#if defined(HAVE_STATFS) && (defined(HAVE_STRUCT_STATFS_F_FSTYPENAME) || \
-                             defined(HAVE_STRUCT_STATFS_F_TYPE))
+#if defined(HAVE_STATFS) && \
+    (defined(HAVE_STRUCT_STATFS_F_FSTYPENAME) || \
+     defined(HAVE_STRUCT_STATFS_F_TYPE))
 #define USE_STATFS 1
 #endif
 
@@ -627,7 +628,12 @@ again:
     }
     return false;
 
-found:
+#if defined(HAVE_STRUCT_STATFS_F_FSTYPENAME) || \
+    defined(HAVE_STRUCT_STATFS_F_TYPE) || \
+    defined(HAVE_STRUCT_STATVFS_F_BASETYPE) || \
+    defined(HAVE_STRUCT_STATVFS_F_FSTYPENAME)
+  found:
+#endif
 
     free (file);
     if (AUTOFS_SUPER_MAGIC == fs_types[i].f_fsid) {

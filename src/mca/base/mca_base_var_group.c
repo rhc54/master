@@ -59,7 +59,7 @@ int mca_base_var_group_init (void)
     int ret;
 
     if (!mca_base_var_group_initialized) {
-        OBJ_CONSTRUCT(&mca_base_var_groups, pmix_pointer_array_t);
+        PMIX_CONSTRUCT(&mca_base_var_groups, pmix_pointer_array_t);
 
         /* These values are arbitrary */
         ret = pmix_pointer_array_init (&mca_base_var_groups, 128, 16384, 128);
@@ -67,7 +67,7 @@ int mca_base_var_group_init (void)
             return ret;
         }
 
-        OBJ_CONSTRUCT(&mca_base_var_group_index_hash, pmix_hash_table_t);
+        PMIX_CONSTRUCT(&mca_base_var_group_index_hash, pmix_hash_table_t);
         ret = pmix_hash_table_init (&mca_base_var_group_index_hash, 256);
         if (PMIX_SUCCESS != ret) {
             return ret;
@@ -90,11 +90,11 @@ int mca_base_var_group_finalize (void)
         for (i = 0 ; i < size ; ++i) {
             object = pmix_pointer_array_get_item (&mca_base_var_groups, i);
             if (NULL != object) {
-                OBJ_RELEASE(object);
+                PMIX_RELEASE(object);
             }
         }
-        OBJ_DESTRUCT(&mca_base_var_groups);
-        OBJ_DESTRUCT(&mca_base_var_group_index_hash);
+        PMIX_DESTRUCT(&mca_base_var_groups);
+        PMIX_DESTRUCT(&mca_base_var_group_index_hash);
         mca_base_var_group_count = 0;
         mca_base_var_group_initialized = false;
     }
@@ -238,35 +238,35 @@ static int group_register (const char *project_name, const char *framework_name,
         return group_id;
     }
 
-    group = OBJ_NEW(mca_base_var_group_t);
+    group = PMIX_NEW(mca_base_var_group_t);
 
     group->group_isvalid = true;
 
     if (NULL != project_name) {
         group->group_project = strdup (project_name);
         if (NULL == group->group_project) {
-            OBJ_RELEASE(group);
+            PMIX_RELEASE(group);
             return PMIX_ERR_OUT_OF_RESOURCE;
         }
     }
     if (NULL != framework_name) {
         group->group_framework = strdup (framework_name);
         if (NULL == group->group_framework) {
-            OBJ_RELEASE(group);
+            PMIX_RELEASE(group);
             return PMIX_ERR_OUT_OF_RESOURCE;
         }
     }
     if (NULL != component_name) {
         group->group_component = strdup (component_name);
         if (NULL == group->group_component) {
-            OBJ_RELEASE(group);
+            PMIX_RELEASE(group);
             return PMIX_ERR_OUT_OF_RESOURCE;
         }
     }
     if (NULL != description) {
         group->group_description = strdup (description);
         if (NULL == group->group_description) {
-            OBJ_RELEASE(group);
+            PMIX_RELEASE(group);
             return PMIX_ERR_OUT_OF_RESOURCE;
         }
     }
@@ -283,13 +283,13 @@ static int group_register (const char *project_name, const char *framework_name,
     ret = mca_base_var_generate_full_name4 (NULL, project_name, framework_name, component_name,
                                             &group->group_full_name);
     if (PMIX_SUCCESS != ret) {
-        OBJ_RELEASE(group);
+        PMIX_RELEASE(group);
         return ret;
     }
 
     group_id = pmix_pointer_array_add (&mca_base_var_groups, group);
     if (0 > group_id) {
-        OBJ_RELEASE(group);
+        PMIX_RELEASE(group);
         return PMIX_ERROR;
     }
 
@@ -350,21 +350,6 @@ int mca_base_var_group_deregister (int group_index)
         }
 
         (void) mca_base_var_deregister (params[i]);
-    }
-
-    /* invalidate all associated mca performance variables */
-    size = pmix_value_array_get_size(&group->group_pvars);
-    params = PMIX_VALUE_ARRAY_GET_BASE(&group->group_pvars, int);
-
-    for (int i = 0 ; i < size ; ++i) {
-        const mca_base_pvar_t *var;
-
-        ret = mca_base_pvar_get (params[i], &var);
-        if (PMIX_SUCCESS != ret || !(var->flags & MCA_BASE_PVAR_FLAG_IWG)) {
-            continue;
-        }
-
-        (void) mca_base_pvar_mark_invalid (params[i]);
     }
 
     size = pmix_value_array_get_size(&group->group_subgroups);
@@ -456,10 +441,10 @@ static void mca_base_var_group_constructor (mca_base_var_group_t *group)
 {
     memset ((char *) group + sizeof (group->super), 0, sizeof (*group) - sizeof (group->super));
 
-    OBJ_CONSTRUCT(&group->group_subgroups, pmix_value_array_t);
+    PMIX_CONSTRUCT(&group->group_subgroups, pmix_value_array_t);
     pmix_value_array_init (&group->group_subgroups, sizeof (int));
 
-    OBJ_CONSTRUCT(&group->group_vars, pmix_value_array_t);
+    PMIX_CONSTRUCT(&group->group_vars, pmix_value_array_t);
     pmix_value_array_init (&group->group_vars, sizeof (int));
 
 }
@@ -481,8 +466,8 @@ static void mca_base_var_group_destructor (mca_base_var_group_t *group)
     free (group->group_component);
     group->group_component = NULL;
 
-    OBJ_DESTRUCT(&group->group_subgroups);
-    OBJ_DESTRUCT(&group->group_vars);
+    PMIX_DESTRUCT(&group->group_subgroups);
+    PMIX_DESTRUCT(&group->group_vars);
 }
 
 int mca_base_var_group_get_count (void)
