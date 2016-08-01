@@ -181,6 +181,7 @@ static void job_data(struct pmix_peer_t *pr, pmix_usock_hdr_t *hdr,
     pmix_client_process_nspace_blob(pmix_globals.myid.nspace, buf);
     cb->status = PMIX_SUCCESS;
     cb->active = false;
+    free(nspace);
 }
 
 static pmix_status_t connect_to_server(struct sockaddr_un *address, void *cbdata)
