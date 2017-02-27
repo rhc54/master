@@ -48,7 +48,7 @@ static inline int _add_key_for_rank(pmix_rank_t rank, pmix_kval_t *kv, void *cbd
 
         if ((cur_rank + 1) <= size) {
             tmp = &(PMIX_VALUE_ARRAY_GET_ITEM(cb->bufs, pmix_buffer_t, cur_rank));
-            pmix_bfrop.pack(tmp, kv, 1, PMIX_KVAL);
+            pmix_bfrops.pack(tmp, kv, 1, PMIX_KVAL);
             return rc;
         }
         if (PMIX_SUCCESS != (rc = pmix_value_array_set_size(cb->bufs, cur_rank + 1))) {
@@ -59,7 +59,7 @@ static inline int _add_key_for_rank(pmix_rank_t rank, pmix_kval_t *kv, void *cbd
             tmp = &(PMIX_VALUE_ARRAY_GET_ITEM(cb->bufs, pmix_buffer_t, i));
             PMIX_CONSTRUCT(tmp, pmix_buffer_t);
         }
-        pmix_bfrop.pack(tmp, kv, 1, PMIX_KVAL);
+        pmix_bfrops.pack(tmp, kv, 1, PMIX_KVAL);
     }
 #endif
     if (cb->hstore_fn) {
@@ -206,7 +206,7 @@ static inline pmix_status_t _job_data_store(const char *nspace, void *cbdata)
 #endif
     cnt = 1;
     kptr = PMIX_NEW(pmix_kval_t);
-    while (PMIX_SUCCESS == (rc = pmix_bfrop.unpack(job_data, kptr, &cnt, PMIX_KVAL)))
+    while (PMIX_SUCCESS == (rc = pmix_bfrops.unpack(job_data, kptr, &cnt, PMIX_KVAL)))
     {
         if (0 == strcmp(kptr->key, PMIX_PROC_BLOB)) {
             bo = &(kptr->value->data.bo);
@@ -214,7 +214,7 @@ static inline pmix_status_t _job_data_store(const char *nspace, void *cbdata)
             PMIX_LOAD_BUFFER(&buf2, bo->bytes, bo->size);
             /* start by unpacking the rank */
             cnt = 1;
-            if (PMIX_SUCCESS != (rc = pmix_bfrop.unpack(&buf2, &rank, &cnt, PMIX_PROC_RANK))) {
+            if (PMIX_SUCCESS != (rc = pmix_bfrops.unpack(&buf2, &rank, &cnt, PMIX_PROC_RANK))) {
                 PMIX_ERROR_LOG(rc);
                 PMIX_DESTRUCT(&buf2);
                 goto exit;
@@ -233,7 +233,7 @@ static inline pmix_status_t _job_data_store(const char *nspace, void *cbdata)
             PMIX_RELEASE(kp2); // maintain accounting
             cnt = 1;
             kp2 = PMIX_NEW(pmix_kval_t);
-            while (PMIX_SUCCESS == (rc = pmix_bfrop.unpack(&buf2, kp2, &cnt, PMIX_KVAL))) {
+            while (PMIX_SUCCESS == (rc = pmix_bfrops.unpack(&buf2, kp2, &cnt, PMIX_KVAL))) {
                 /* if the value contains a string that is longer than the
                  * limit, then compress it */
                 if (PMIX_STRING_SIZE_CHECK(kp2->value)) {
@@ -270,7 +270,7 @@ static inline pmix_status_t _job_data_store(const char *nspace, void *cbdata)
             PMIX_LOAD_BUFFER(&buf2, bo->bytes, bo->size);
             /* start by unpacking the number of nodes */
             cnt = 1;
-            if (PMIX_SUCCESS != (rc = pmix_bfrop.unpack(&buf2, &nnodes, &cnt, PMIX_SIZE))) {
+            if (PMIX_SUCCESS != (rc = pmix_bfrops.unpack(&buf2, &nnodes, &cnt, PMIX_SIZE))) {
                 PMIX_ERROR_LOG(rc);
                 PMIX_DESTRUCT(&buf2);
                 goto exit;
@@ -279,7 +279,7 @@ static inline pmix_status_t _job_data_store(const char *nspace, void *cbdata)
             for (i=0; i < nnodes; i++) {
                 cnt = 1;
                 PMIX_CONSTRUCT(&kv, pmix_kval_t);
-                if (PMIX_SUCCESS != (rc = pmix_bfrop.unpack(&buf2, &kv, &cnt, PMIX_KVAL))) {
+                if (PMIX_SUCCESS != (rc = pmix_bfrops.unpack(&buf2, &kv, &cnt, PMIX_KVAL))) {
                     PMIX_ERROR_LOG(rc);
                     PMIX_DESTRUCT(&buf2);
                     PMIX_DESTRUCT(&kv);
