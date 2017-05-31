@@ -1317,9 +1317,8 @@ static pmix_status_t hash_fetch(const pmix_proc_t *proc,
             }
         }
         if (NULL == trk) {
-            /* we have no way of providing this info */
-            PMIX_ERROR_LOG(PMIX_ERR_NOT_FOUND);
-            return PMIX_ERR_NOT_FOUND;
+            /* let the caller know */
+            return PMIX_ERR_INVALID_NAMESPACE;
         }
         /* the job data is stored on the internal hash table */
         ht = &trk->internal;
@@ -1334,7 +1333,6 @@ static pmix_status_t hash_fetch(const pmix_proc_t *proc,
             return rc;
         }
         if (NULL == val) {
-            PMIX_ERROR_LOG(PMIX_ERR_NOT_FOUND);
             return PMIX_ERR_NOT_FOUND;
         }
         /* the data is returned in a pmix_data_array_t of pmix_info_t
@@ -1378,8 +1376,7 @@ static pmix_status_t hash_fetch(const pmix_proc_t *proc,
         }
     }
     if (NULL == trk) {
-        PMIX_ERROR_LOG(PMIX_ERR_NOT_FOUND);
-        return PMIX_ERR_NOT_FOUND;
+        return PMIX_ERR_INVALID_NAMESPACE;
     }
 
     /* fetch from the corresponding hash table - note that
@@ -1402,7 +1399,6 @@ static pmix_status_t hash_fetch(const pmix_proc_t *proc,
 
   doover:
     rc = pmix_hash_fetch(ht, proc->rank, key, &val);
-    PMIX_ERROR_LOG(rc);
     if (PMIX_SUCCESS == rc) {
         /* if the key was NULL, then all found keys will be
          * returned as a pmix_data_array_t in the value */

@@ -923,6 +923,11 @@ pmix_status_t pmix_bfrops_base_pack_darray(pmix_buffer_t *buffer, const void *sr
                     return ret;
                 }
                 break;
+            case PMIX_INFO:
+                if (PMIX_SUCCESS != (ret = pmix_bfrops_base_pack_info(buffer, p[i].array, p[i].size, PMIX_INFO))) {
+                    return ret;
+                }
+                break;
             case PMIX_PROC_RANK:
                 if (PMIX_SUCCESS != (ret = pmix_bfrops_base_pack_rank(buffer, p[i].array, p[i].size, PMIX_PROC_RANK))) {
                     return ret;
@@ -986,7 +991,8 @@ pmix_status_t pmix_bfrops_base_pack_darray(pmix_buffer_t *buffer, const void *sr
                 break;
             /********************/
             default:
-                pmix_output(0, "PACK-PMIX-VALUE: UNSUPPORTED TYPE %d", (int)p[i].type);
+                pmix_output(0, "PACK-PMIX-VALUE[%s:%d]: UNSUPPORTED TYPE %d",
+                            __FILE__, __LINE__, (int)p[i].type);
             return PMIX_ERROR;
         }
     }
@@ -1208,7 +1214,8 @@ pmix_status_t pmix_bfrops_base_pack_val(pmix_buffer_t *buffer,
             break;
         /********************/
         default:
-        pmix_output(0, "PACK-PMIX-VALUE: UNSUPPORTED TYPE %d", (int)p->type);
+        pmix_output(0, "PACK-PMIX-VALUE[%s:%d]: UNSUPPORTED TYPE %d",
+                    __FILE__, __LINE__, (int)p->type);
         return PMIX_ERROR;
     }
     return PMIX_SUCCESS;

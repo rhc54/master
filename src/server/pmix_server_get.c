@@ -122,6 +122,7 @@ pmix_status_t pmix_server_get(pmix_buffer_t *buf,
     bool local;
     bool localonly = false;
     pmix_buffer_t pbkt;
+    pmix_byte_object_t bo;
     pmix_cb_t cb;
     pmix_kval_t *kv;
     pmix_proc_t proc;
@@ -276,13 +277,7 @@ pmix_status_t pmix_server_get(pmix_buffer_t *buf,
          * can retrieve the info from that GDS. Otherwise,
          * we need to retrieve it from our own */
         PMIX_CONSTRUCT(&cb, pmix_cb_t);
-        if (0 < nptr->nlocalprocs) {
-            /* there must be at least one rank for this nspace on this node */
-            rinfo = (pmix_rank_info_t*)pmix_list_get_first(&nptr->ranks);
-            peer = (pmix_peer_t*)pmix_pointer_array_get_item(&pmix_server_globals.clients, rinfo->peerid);
-        } else {
             peer = pmix_globals.mypeer;
-        }
         /* this data is for a local client, so give the gds the
          * option of returning a complete copy of the data,
          * or returning a pointer to local storage */
@@ -314,6 +309,20 @@ pmix_status_t pmix_server_get(pmix_buffer_t *buf,
             }
         }
         PMIX_DESTRUCT(&cb);
+        /* extract the byte object */
+        PMIX_UNLOAD_BUFFER(&pbkt, bo.bytes, bo.size);
+        PMIX_DESTRUCT(&pbkt);
+        /* pack it into the payload */
+        PMIX_CONSTRUCT(&pbkt, pmix_buffer_t);
+        PMIX_BFROPS_PACK(rc, cd->peer, &pbkt, &bo, 1, PMIX_BYTE_OBJECT);
+        free(bo.bytes);
+        if (PMIX_SUCCESS != rc) {
+            PMIX_ERROR_LOG(rc);
+            PMIX_DESTRUCT(&pbkt);
+            PMIX_DESTRUCT(&cb);
+            return rc;
+        }
+        /* unload the resulting payload */
         PMIX_UNLOAD_BUFFER(&pbkt, data, sz);
         PMIX_DESTRUCT(&pbkt);
         cbfunc(PMIX_SUCCESS, data, sz, cbdata, relfn, data);

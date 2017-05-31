@@ -1028,7 +1028,9 @@ static void _resolve_peers(int sd, short args, void *cbdata)
 
     PMIX_GDS_FETCH_KV(rc, &pmix_client_globals.myserver, cb);
     if (PMIX_SUCCESS != rc) {
-        PMIX_ERROR_LOG(rc);
+        if (PMIX_ERR_INVALID_NAMESPACE != rc) {
+            PMIX_ERROR_LOG(rc);
+        }
         goto complete;
     }
     /* should just be the one value on the list */
@@ -1088,10 +1090,15 @@ PMIX_EXPORT pmix_status_t PMIx_Resolve_peers(const char *nodename,
 {
     pmix_cb_t *cb;
     pmix_status_t rc;
+    pmix_proc_t proc;
 
     if (pmix_globals.init_cntr <= 0) {
         return PMIX_ERR_INIT;
     }
+
+    /* set default */
+    *procs = NULL;
+    *nprocs = 0;
 
     cb = PMIX_NEW(pmix_cb_t);
     cb->key = (char*)nodename;
@@ -1100,6 +1107,24 @@ PMIX_EXPORT pmix_status_t PMIx_Resolve_peers(const char *nodename,
     PMIX_THREADSHIFT(cb, _resolve_peers);
 
     PMIX_WAIT_FOR_COMPLETION(cb->active);
+
+    /* if the nspace wasn't found, then we need to
+     * ask the server for that info */
+    if (PMIX_ERR_INVALID_NAMESPACE == cb->status) {
+        (void)strncpy(proc.nspace, nspace, PMIX_MAX_NSLEN);
+        proc.rank = PMIX_RANK_WILDCARD;
+        /* any key will suffice as it will bring down
+         * the entire data blob */
+        rc = PMIx_Get(&proc, PMIX_UNIV_SIZE, NULL, 0, NULL);
+        if (PMIX_SUCCESS != rc) {
+            PMIX_RELEASE(cb);
+            return rc;
+        }
+        /* retry the fetch */
+        cb->active = true;
+        PMIX_THREADSHIFT(cb, _resolve_peers);
+        PMIX_WAIT_FOR_COMPLETION(cb->active);
+    }
     *procs = cb->procs;
     *nprocs = cb->nprocs;
 

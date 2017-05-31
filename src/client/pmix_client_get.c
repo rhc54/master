@@ -105,7 +105,9 @@ PMIX_EXPORT pmix_status_t PMIx_Get(const pmix_proc_t *proc, const char key[],
     /* wait for the data to return */
     PMIX_WAIT_FOR_COMPLETION(cb->active);
     rc = cb->status;
-    *val = cb->value;
+    if (NULL != val) {
+        *val = cb->value;
+    }
     PMIX_RELEASE(cb);
 
     pmix_output_verbose(2, pmix_globals.debug_output,

@@ -103,6 +103,7 @@ static pmix_status_t pmix_bfrops_base_unpack_buffer(pmix_pointer_array_t *regtyp
         /* if the data types don't match, then return an error */
         if (type != local_type) {
             pmix_output(0, "PMIX bfrop:unpack: got type %d when expecting type %d", local_type, type);
+            assert(0);
             return PMIX_ERR_PACK_MISMATCH;
         }
     }
@@ -1477,6 +1478,15 @@ pmix_status_t pmix_bfrops_base_unpack_darray(pmix_buffer_t *buffer, void *dest,
                     return PMIX_ERR_NOMEM;
                 }
                 if (PMIX_SUCCESS != (ret = pmix_bfrops_base_unpack_proc(buffer, ptr[i].array, &m, ptr[i].type))) {
+                    return ret;
+                }
+                break;
+            case PMIX_INFO:
+                ptr[i].array = (pmix_info_t*)malloc(m * sizeof(pmix_info_t));
+                if (NULL == ptr[i].array) {
+                    return PMIX_ERR_NOMEM;
+                }
+                if (PMIX_SUCCESS != (ret = pmix_bfrops_base_unpack_info(buffer, ptr[i].array, &m, ptr[i].type))) {
                     return ret;
                 }
                 break;
