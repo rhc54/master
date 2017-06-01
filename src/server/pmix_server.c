@@ -2077,14 +2077,13 @@ static void _cnct(int sd, short args, void *cbdata)
                 if (0 == strncmp(nspaces[i], cd->peer->info->pname.nspace, PMIX_MAX_NSLEN)) {
                     continue;
                 }
-                (void)strncpy(proc.nspace, nspaces[i], PMIX_MAX_NSLEN);
-                proc.rank = PMIX_RANK_WILDCARD;
+
                 /* this is a local request, so give the gds the option
                  * of returning a copy of the data, or a pointer to
                  * local storage */
                 /* add the job-level info, if necessary */
-                (void)strncpy(proc.nspace, cd->peer->info->pname.nspace, PMIX_MAX_NSLEN);
                 proc.rank = PMIX_RANK_WILDCARD;
+                (void)strncpy(proc.nspace, nspaces[i], PMIX_MAX_NSLEN);
                 PMIX_CONSTRUCT(&cb, pmix_cb_t);
                 /* this is for a local client, so give the gds the
                  * option of returning a complete copy of the data,
