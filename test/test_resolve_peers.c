@@ -13,6 +13,8 @@
 #include "test_resolve_peers.h"
 #include "test_cd.h"
 
+#include "src/util/output.h"
+
 static int resolve_nspace(char *nspace, test_params params, char *my_nspace, int my_rank)
 {
     int rc;
@@ -42,7 +44,8 @@ static int resolve_nspace(char *nspace, test_params params, char *my_nspace, int
     }
     for (i = 0; i < nprocs; i++) {
         if (procs[i].rank != ranks[i].rank) {
-            TEST_ERROR(("%s:%d: Resolve peers returned incorrect result: returned value %s:%d, expected rank %d", my_nspace, my_rank, procs[i].nspace, ranks[i].rank, procs[i].rank));
+            TEST_ERROR(("%s:%d: Resolve peers returned incorrect result: returned value %s:%d, expected rank %d",
+                        my_nspace, my_rank, procs[i].nspace, procs[i].rank, ranks[i].rank));
             rc = PMIX_ERROR;
             break;
         }
@@ -75,12 +78,14 @@ int test_resolve_peers(char *my_nspace, int my_rank, test_params params)
         return PMIX_ERROR;
     }
     for (n = 0; n < ns_num; n++) {
+        memset(nspace, 0, PMIX_MAX_NSLEN+1);
         /* then connect to processes from different namespaces and resolve peers. */
         (void)snprintf(nspace, PMIX_MAX_NSLEN, "%s-%d", TEST_NAMESPACE, n);
         if (0 == strncmp(my_nspace, nspace, strlen(nspace)+1)) {
             continue;
         }
 
+#if 0
         /* add to procs array all processes from own namespace and all processes from this namespace.
          * Make sure that processes are placed in the same order. */
         if (0 < strncmp(nspace, my_nspace, PMIX_MAX_NSLEN)) {
@@ -96,11 +101,13 @@ int test_resolve_peers(char *my_nspace, int my_rank, test_params params)
         /* make a connection between processes from own namespace and processes from this namespace. */
         rc = test_cd_common(procs, 2, 1, 0);
         if (PMIX_SUCCESS == rc) {
-            TEST_VERBOSE(("%s:%d: Connect to %s succeeded %s.", my_nspace, my_rank, nspace));
+           // TEST_VERBOSE(("%s:%d: Connect to %s succeeded %s.", my_nspace, my_rank, nspace));
+           pmix_output(0, "%s:%d Connect succeeded", my_nspace, my_rank);
         } else {
             TEST_ERROR(("%s:%d: Connect to %s failed %s.", my_nspace, my_rank, nspace));
             return PMIX_ERROR;
         }
+#endif
         /* then resolve peers from this namespace. */
         rc = resolve_nspace(nspace, params, my_nspace, my_rank);
         if (PMIX_SUCCESS == rc) {
@@ -109,6 +116,7 @@ int test_resolve_peers(char *my_nspace, int my_rank, test_params params)
             test_cd_common(procs, 2, 1, 1);
             break;
         }
+#if 0
         /* disconnect from the processes of this namespace. */
         rc = test_cd_common(procs, 2, 1, 0);
         if (PMIX_SUCCESS == rc) {
@@ -117,6 +125,7 @@ int test_resolve_peers(char *my_nspace, int my_rank, test_params params)
             TEST_ERROR(("%s:%d: Disconnect from %s failed %s.", my_nspace, my_rank, nspace));
             return PMIX_ERROR;
         }
+#endif
     }
     if (PMIX_SUCCESS == rc) {
         TEST_VERBOSE(("%s:%d: Resolve peers test succeeded.", my_nspace, my_rank));
