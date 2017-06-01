@@ -120,9 +120,6 @@ static void htdes(pmix_hash_trkr_t *p)
     if (NULL != p->ns) {
         free(p->ns);
     }
-    if (NULL != p->nptr) {
-        PMIX_RELEASE(p->nptr);
-    }
     PMIX_DESTRUCT(&p->internal);
     PMIX_DESTRUCT(&p->remote);
     PMIX_DESTRUCT(&p->local);
