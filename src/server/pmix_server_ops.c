@@ -344,6 +344,7 @@ static pmix_server_trkr_t* new_tracker(pmix_proc_t *procs,
     size_t i;
     bool all_def;
     pmix_nspace_t *nptr, *ns;
+    pmix_rank_info_t *info;
 
     pmix_output_verbose(5, pmix_globals.debug_output,
                         "new_tracker called with %d procs", (int)nprocs);
@@ -396,7 +397,6 @@ static pmix_server_trkr_t* new_tracker(pmix_proc_t *procs,
                                 procs[i].nspace);
             continue;
         }
-        trk->nlocal = nptr->nlocalprocs;
         /* have all the clients for this nspace been defined? */
         if (!nptr->all_registered) {
             /* nope, so no point in going further on this one - we'll
@@ -408,6 +408,20 @@ static pmix_server_trkr_t* new_tracker(pmix_proc_t *procs,
             /* we have to continue processing the list of procs
              * to setup the trk->pcs array, so don't break out
              * of the loop */
+        }
+        /* is this one of my local ranks? */
+        PMIX_LIST_FOREACH(info, &nptr->ranks, pmix_rank_info_t) {
+            if (procs[i].rank == info->pname.rank ||
+                PMIX_RANK_WILDCARD == procs[i].rank) {
+                    pmix_output_verbose(5, pmix_globals.debug_output,
+                                        "adding local proc %s.%d to tracker",
+                                        info->pname.nspace, info->pname.rank);
+                /* track the count */
+                ++trk->nlocal;
+                if (PMIX_RANK_WILDCARD != procs[i].rank) {
+                    break;
+                }
+            }
         }
     }
     if (all_def) {
