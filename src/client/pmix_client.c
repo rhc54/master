@@ -348,10 +348,7 @@ PMIX_EXPORT pmix_status_t PMIx_Init(pmix_proc_t *proc,
     pmix_value_t *val = NULL;
     size_t n;
     bool found;
-
-    if (NULL == proc) {
-        return PMIX_ERR_BAD_PARAM;
-    }
+    pmix_condition_t cond;
 
 
     if (0 < pmix_globals.init_cntr || PMIX_PROC_SERVER == pmix_globals.proc_type) {
@@ -861,7 +858,7 @@ static void _commitfn(int sd, short args, void *cbdata)
     if (PMIX_SUCCESS != rc) {
         PMIX_ERROR_LOG(rc);
         PMIX_RELEASE(msgout);
-        goto done;
+        goto error;
     }
 
     /* if we haven't already done it, ensure we have committed our values */
@@ -873,7 +870,7 @@ static void _commitfn(int sd, short args, void *cbdata)
         if (PMIX_SUCCESS != rc) {
             PMIX_ERROR_LOG(rc);
             PMIX_RELEASE(msgout);
-            goto done;
+            goto error;
         }
         /* allow the GDS module to pass us this info
          * as a local connection as this data would
@@ -885,7 +882,7 @@ static void _commitfn(int sd, short args, void *cbdata)
         if (PMIX_SUCCESS != rc) {
             PMIX_ERROR_LOG(rc);
             PMIX_RELEASE(msgout);
-            goto done;
+            goto error;
         }
 
         PMIX_CONSTRUCT(&bkt, pmix_buffer_t);
@@ -896,7 +893,7 @@ static void _commitfn(int sd, short args, void *cbdata)
                 PMIX_ERROR_LOG(rc);
                 PMIX_DESTRUCT(&bkt);
                 PMIX_RELEASE(msgout);
-                goto done;
+                goto error;
             }
             pmix_list_remove_item(&cb->kvs, &kv->super);
             PMIX_RELEASE(kv);
@@ -908,7 +905,7 @@ static void _commitfn(int sd, short args, void *cbdata)
         if (PMIX_SUCCESS != rc) {
             PMIX_ERROR_LOG(rc);
             PMIX_RELEASE(msgout);
-            goto done;
+            goto error;
         }
 
         /* fetch and pack the remote values */
@@ -918,7 +915,7 @@ static void _commitfn(int sd, short args, void *cbdata)
         if (PMIX_SUCCESS != rc) {
             PMIX_ERROR_LOG(rc);
             PMIX_RELEASE(msgout);
-            goto done;
+            goto error;
         }
         /* we need real copies here as this data will
          * go to remote procs - so a connection will
@@ -930,7 +927,7 @@ static void _commitfn(int sd, short args, void *cbdata)
         if (PMIX_SUCCESS != rc) {
             PMIX_ERROR_LOG(rc);
             PMIX_RELEASE(msgout);
-            goto done;
+            goto error;
         }
 
         PMIX_CONSTRUCT(&bkt, pmix_buffer_t);
@@ -941,7 +938,7 @@ static void _commitfn(int sd, short args, void *cbdata)
                 PMIX_ERROR_LOG(rc);
                 PMIX_DESTRUCT(&bkt);
                 PMIX_RELEASE(msgout);
-                goto done;
+                goto error;
             }
             pmix_list_remove_item(&cb->kvs, &kv->super);
             PMIX_RELEASE(kv);
@@ -953,7 +950,7 @@ static void _commitfn(int sd, short args, void *cbdata)
         if (PMIX_SUCCESS != rc) {
             PMIX_ERROR_LOG(rc);
             PMIX_RELEASE(msgout);
-            goto done;
+            goto error;
         }
 
         /* record that all committed data to-date has been sent */
@@ -964,8 +961,14 @@ static void _commitfn(int sd, short args, void *cbdata)
      * that we contributed whatever we had */
     PMIX_PTL_SEND_RECV(rc, &pmix_client_globals.myserver, msgout,
                        wait_cbfunc, (void*)&cb->active);
+    if (PMIX_SUCCESS == rc) {
+        /* we should wait for the callback, so don't
+         * modify the active flag */
+        cb->pstatus = PMIX_SUCCESS;
+        return;
+    }
 
-  done:
+  error:
     cb->pstatus = rc;
     cb->active = false;
  }
