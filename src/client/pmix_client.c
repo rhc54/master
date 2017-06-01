@@ -964,7 +964,7 @@ static void _commitfn(int sd, short args, void *cbdata)
      * that we contributed whatever we had */
     PMIX_PTL_SEND_RECV(rc, &pmix_client_globals.myserver, msgout,
                        wait_cbfunc, (void*)&cb->active);
-    if (PMIX_SUCCESS != rc) {
+    if (PMIX_SUCCESS == rc) {
         cb->pstatus = PMIX_SUCCESS;
         return;
     }
