@@ -350,6 +350,7 @@ pmix_status_t hash_cache_job_info(struct pmix_nspace_t *ns,
         if (NULL == trk) {
             return PMIX_ERR_NOMEM;
         }
+        PMIX_RETAIN(nptr);
         trk->nptr = nptr;
         trk->ns = strdup(nptr->nspace);
         pmix_list_append(&myhashes, &trk->super);
@@ -809,6 +810,7 @@ static pmix_status_t hash_store_job_info(const char *nspace,
     PMIX_LIST_FOREACH(htptr, &myhashes, pmix_hash_trkr_t) {
         if (0 == strcmp(htptr->ns, nspace)) {
             ht = &htptr->internal;
+            break;
         }
     }
     if (NULL == ht) {

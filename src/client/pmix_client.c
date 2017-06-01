@@ -964,10 +964,6 @@ static void _commitfn(int sd, short args, void *cbdata)
      * that we contributed whatever we had */
     PMIX_PTL_SEND_RECV(rc, &pmix_client_globals.myserver, msgout,
                        wait_cbfunc, (void*)&cb->active);
-    if (PMIX_SUCCESS != rc) {
-        cb->pstatus = PMIX_SUCCESS;
-        return;
-    }
 
   done:
     cb->pstatus = rc;
@@ -1201,6 +1197,7 @@ PMIX_EXPORT pmix_status_t PMIx_Resolve_nodes(const char *nspace, char **nodelist
 {
     pmix_cb_t *cb;
     pmix_status_t rc;
+    pmix_proc_t proc;
 
     if (pmix_globals.init_cntr <= 0) {
         return PMIX_ERR_INIT;
@@ -1212,6 +1209,23 @@ PMIX_EXPORT pmix_status_t PMIx_Resolve_nodes(const char *nspace, char **nodelist
     PMIX_THREADSHIFT(cb, _resolve_nodes);
 
     PMIX_WAIT_FOR_COMPLETION(cb->active);
+    /* if the nspace wasn't found, then we need to
+     * ask the server for that info */
+    if (PMIX_ERR_INVALID_NAMESPACE == cb->status) {
+        (void)strncpy(proc.nspace, nspace, PMIX_MAX_NSLEN);
+        proc.rank = PMIX_RANK_WILDCARD;
+        /* any key will suffice as it will bring down
+         * the entire data blob */
+        rc = PMIx_Get(&proc, PMIX_UNIV_SIZE, NULL, 0, NULL);
+        if (PMIX_SUCCESS != rc) {
+            PMIX_RELEASE(cb);
+            return rc;
+        }
+        /* retry the fetch */
+        cb->active = true;
+        PMIX_THREADSHIFT(cb, _resolve_nodes);
+        PMIX_WAIT_FOR_COMPLETION(cb->active);
+    }
     /* the string we want is in the key field */
     *nodelist = cb->key;
 
