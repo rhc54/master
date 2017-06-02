@@ -25,29 +25,42 @@
 #include <pmix_common.h>
 #include "src/include/pmix_globals.h"
 
-#include "pmix_sm.h"
-#include "pmix_mmap.h"
+//#include "pmix_sm.h"
+#include <src/mca/pshmem/pshmem.h>
+#include "pshmem_mmap.h"
 
 #if !defined(MAP_ANONYMOUS) && defined(MAP_ANON)
 #    define MAP_ANONYMOUS MAP_ANON
 #endif /* MAP_ANONYMOUS and MAP_ANON */
 
+static int _mmap_init(void);
+static void _mmap_finalize(void);
+static int _mmap_segment_create(pmix_pshmem_seg_t *sm_seg, const char *file_name, size_t size);
+static int _mmap_segment_attach(pmix_pshmem_seg_t *sm_seg, pmix_pshmem_access_mode_t sm_mode);
+static int _mmap_segment_detach(pmix_pshmem_seg_t *sm_seg);
+static int _mmap_segment_unlink(pmix_pshmem_seg_t *sm_seg);
 
-static int _mmap_segment_create(pmix_sm_seg_t *sm_seg, const char *file_name, size_t size);
-static int _mmap_segment_attach(pmix_sm_seg_t *sm_seg, pmix_sm_access_mode_t sm_mode);
-static int _mmap_segment_detach(pmix_sm_seg_t *sm_seg);
-static int _mmap_segment_unlink(pmix_sm_seg_t *sm_seg);
-
-pmix_sm_base_module_t pmix_sm_mmap_module = {
+pmix_pshmem_base_module_t pmix_mmap_module = {
     "mmap",
+    _mmap_init,
+    _mmap_finalize,
     _mmap_segment_create,
     _mmap_segment_attach,
     _mmap_segment_detach,
     _mmap_segment_unlink
 };
 
+static int _mmap_init(void)
+{
+    return PMIX_SUCCESS;
+}
 
-int _mmap_segment_create(pmix_sm_seg_t *sm_seg, const char *file_name, size_t size)
+static void _mmap_finalize(void)
+{
+    ;
+}
+
+static int _mmap_segment_create(pmix_pshmem_seg_t *sm_seg, const char *file_name, size_t size)
 {
     int rc = PMIX_SUCCESS;
     void *seg_addr = MAP_FAILED;
@@ -126,12 +139,12 @@ out:
     return rc;
 }
 
-int _mmap_segment_attach(pmix_sm_seg_t *sm_seg, pmix_sm_access_mode_t sm_mode)
+static int _mmap_segment_attach(pmix_pshmem_seg_t *sm_seg, pmix_pshmem_access_mode_t sm_mode)
 {
     mode_t mode = O_RDWR;
     int mmap_prot = PROT_READ | PROT_WRITE;
 
-    if (sm_mode == PMIX_SM_RONLY) {
+    if (sm_mode == PMIX_PSHMEM_RONLY) {
         mode = O_RDONLY;
         mmap_prot = PROT_READ;
     }
@@ -163,7 +176,7 @@ int _mmap_segment_attach(pmix_sm_seg_t *sm_seg, pmix_sm_access_mode_t sm_mode)
     return PMIX_SUCCESS;
 }
 
-int _mmap_segment_detach(pmix_sm_seg_t *sm_seg)
+static int _mmap_segment_detach(pmix_pshmem_seg_t *sm_seg)
 {
     int rc = PMIX_SUCCESS;
 
@@ -179,7 +192,7 @@ int _mmap_segment_detach(pmix_sm_seg_t *sm_seg)
     return rc;
 }
 
-int _mmap_segment_unlink(pmix_sm_seg_t *sm_seg)
+static int _mmap_segment_unlink(pmix_pshmem_seg_t *sm_seg)
 {
     if (-1 == unlink(sm_seg->seg_name)) {
         pmix_output_verbose(2, pmix_globals.debug_output,

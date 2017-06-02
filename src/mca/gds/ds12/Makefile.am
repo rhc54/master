@@ -14,6 +14,8 @@
 # Copyright (c) 2013-2017 Intel, Inc. All rights reserved.
 # Copyright (c) 2017      Research Organization for Information Science
 #                         and Technology (RIST). All rights reserved.
+# Copyright (c) 2017      Mellanox Technologies, Inc.
+#                         All rights reserved.
 # $COPYRIGHT$
 #
 # Additional copyrights may follow
@@ -21,24 +23,26 @@
 # $HEADER$
 #
 
-AM_CPPFLAGS = $(gds_opa_CPPFLAGS)
+AM_CPPFLAGS = $(gds_ds12_CPPFLAGS)
 
-headers = gds_opa.h
+headers = \
+        gds_dstore.h
+
 sources = \
-        gds_opa_component.c \
-        gds_opa.c
+        gds_dstore.c \
+        gds_dstore_component.c
 
 # Make the output library in this directory, and name it either
 # mca_<type>_<name>.la (for DSO builds) or libmca_<type>_<name>.la
 # (for static builds).
 
-if MCA_BUILD_pmix_gds_opa_DSO
+if MCA_BUILD_pmix_gds_ds12_DSO
 lib =
 lib_sources =
-component = mca_gds_opa.la
+component = mca_gds_ds12.la
 component_sources = $(headers) $(sources)
 else
-lib = libmca_gds_opa.la
+lib = libmca_gds_ds12.la
 lib_sources = $(headers) $(sources)
 component =
 component_sources =
@@ -46,11 +50,11 @@ endif
 
 mcacomponentdir = $(pmixlibdir)
 mcacomponent_LTLIBRARIES = $(component)
-mca_gds_opa_la_SOURCES = $(component_sources)
-mca_gds_opa_la_LIBADD = $(gds_opa_LIBS)
-mca_gds_opa_la_LDFLAGS = -module -avoid-version $(gds_opa_LDFLAGS)
+mca_gds_ds12_la_SOURCES = $(component_sources)
+mca_gds_ds12_la_LIBADD = $(gds_ds12_LIBS)
+mca_gds_ds12_la_LDFLAGS = -module -avoid-version $(gds_ds12_LDFLAGS)
 
 noinst_LTLIBRARIES = $(lib)
-libmca_gds_opa_la_SOURCES = $(lib_sources)
-libmca_gds_opa_la_LIBADD = $(gds_opa_LIBS)
-libmca_gds_opa_la_LDFLAGS = -module -avoid-version $(gds_opa_LDFLAGS)
+libmca_gds_ds12_la_SOURCES = $(lib_sources)
+libmca_gds_ds12_la_LIBADD = $(gds_dstore_LIBS)
+libmca_gds_ds12_la_LDFLAGS = -module -avoid-version $(gds_ds12_LDFLAGS)

@@ -421,6 +421,7 @@ static void _getnbfn(int fd, short flags, void *cbdata)
     pmix_kval_t *kv;
     bool optional = false;
     struct timeval tv;
+    bool my_nspace = false, my_rank = false;
 
     pmix_output_verbose(2, pmix_globals.debug_output,
                         "pmix: getnbfn value for proc %s:%u key %s",
@@ -460,6 +461,27 @@ static void _getnbfn(int fd, short flags, void *cbdata)
     /* prep the response list */
     PMIX_CONSTRUCT(&kvs, pmix_list_t);
 
+    my_nspace = (0 == strncmp(cb->pname.nspace, pmix_globals.myid.nspace, PMIX_MAX_NSLEN));
+    my_rank = (pmix_globals.myid.rank == cb->pname.rank);
+
+    /* check the internal storage first */
+    cb->proc = &proc;
+    cb->copy = true;
+    PMIX_GDS_FETCH_KV(rc, &pmix_client_globals.myserver, cb);
+    if(PMIX_SUCCESS == rc) {
+        if (1 != pmix_list_get_size(&cb->kvs)) {
+            /* not allowed */
+            val = NULL;
+            rc = PMIX_ERR_INVALID_VAL;
+            goto respond;
+        }
+        /* return whatever we found */
+        kv = (pmix_kval_t*)pmix_list_get_first(&cb->kvs);
+        val = kv->value;
+        kv->value = NULL;  // protect the value
+        goto respond;
+    }
+
     /* if the key starts with "pmix", then they are looking for data
      * that was provided by the server at startup */
     if (0 == strncmp(cb->key, "pmix", 4)) {
@@ -469,7 +491,7 @@ static void _getnbfn(int fd, short flags, void *cbdata)
         cb->copy = true;
         PMIX_GDS_FETCH_KV(rc, &pmix_client_globals.myserver, cb);
         if (PMIX_SUCCESS != rc) {
-            if (0 != strncmp(cb->pname.nspace, pmix_globals.myid.nspace, PMIX_MAX_NSLEN)) {
+            if (!my_nspace) {
                 /* we are asking about the job-level info from another
                  * namespace. It seems that we don't have it - go and
                  * ask server
@@ -492,28 +514,12 @@ static void _getnbfn(int fd, short flags, void *cbdata)
         kv->value = NULL;  // protect the value
         goto respond;
     } else {
-        /* fetch the data from my peer module - since we are passing
-         * it back to the user, we need a copy of it */
         cb->proc = &proc;
         cb->copy = true;
-        PMIX_GDS_FETCH_KV(rc, pmix_globals.mypeer, cb);
+        PMIX_GDS_FETCH_KV(rc, &pmix_client_globals.myserver, cb);
         if (PMIX_SUCCESS != rc) {
-            /* if this was a request for info about ourselves, then
-             * there is no place to go for it - we just need to return
-             * an error */
-            if (0 == strncmp(cb->pname.nspace, pmix_globals.myid.nspace, PMIX_MAX_NSLEN) &&
-                cb->pname.rank == pmix_globals.myid.rank) {
-                val = NULL;
-                goto respond;
-            } else {
-                /* ask the server to try and get it for us */
-                goto request;
-            }
-        } else if (1 != pmix_list_get_size(&cb->kvs)) {
-            /* not allowed */
             val = NULL;
-            rc = PMIX_ERR_INVALID_VAL;
-            goto respond;
+            goto request;
         }
         /* return whatever we found */
         kv = (pmix_kval_t*)pmix_list_get_first(&cb->kvs);

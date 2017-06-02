@@ -14,6 +14,10 @@
 
 #include <src/include/pmix_config.h>
 
+#include <pmix_common.h>
+#include "src/mca/mca.h"
+#include "src/mca/base/pmix_mca_base_var.h"
+#include "src/mca/base/pmix_mca_base_framework.h"
 
 
 BEGIN_C_DECLS
@@ -119,7 +123,22 @@ typedef struct {
     pmix_pshmem_base_module_unlink_fn_t          segment_unlink;
 } pmix_pshmem_base_module_t;
 
+/* define the component structure */
+struct pmix_pshmem_base_component_t {
+    pmix_mca_base_component_t                       base;
+    pmix_mca_base_component_data_t                  data;
+    int                                             priority;
+};
+
+typedef struct pmix_pshmem_base_component_t pmix_pshmem_base_component_t;
+
 PMIX_EXPORT extern pmix_pshmem_base_module_t pmix_pshmem;
+
+/*
+ * Macro for use in components that are of type gds
+ */
+#define PMIX_PSHMEM_BASE_VERSION_1_0_0 \
+    PMIX_MCA_BASE_VERSION_1_0_0("pshmem", 1, 0, 0)
 
 END_C_DECLS
 
