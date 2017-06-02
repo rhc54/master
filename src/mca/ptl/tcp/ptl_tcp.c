@@ -434,7 +434,7 @@ static pmix_status_t send_connect_ack(int sd)
     bftype = pmix_globals.mypeer->nptr->compat.type;
 
     /* add our active gds module for working with the server */
-    gds = (char*)pmix_globals.mypeer->nptr->compat.gds->name;
+    gds = (char*)pmix_client_globals.myserver.nptr->compat.gds->name;
 
     /* set the number of bytes to be read beyond the header */
     hdr.nbytes = sdsize + strlen(PMIX_VERSION) + 1 + strlen(sec) + 1 \

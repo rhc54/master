@@ -227,7 +227,7 @@ pmix_status_t pmix_server_commit(pmix_peer_t *peer, pmix_buffer_t *buf)
             cb.proc = &proc;
             cb.scope = PMIX_REMOTE;
             cb.copy = true;
-            PMIX_GDS_FETCH_KV(rc, peer, &cb);
+            PMIX_GDS_FETCH_KV(rc, pmix_globals.mypeer, &cb);
             if (PMIX_SUCCESS == rc) {
                 /* package it up */
                 PMIX_CONSTRUCT(&pbkt, pmix_buffer_t);
