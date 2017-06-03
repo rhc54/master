@@ -1,6 +1,6 @@
 /* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil -*- */
 /*
- * Copyright (c) 2016      Mellanox Technologies, Inc.
+ * Copyright (c) 2016-2017 Mellanox Technologies, Inc.
  *                         All rights reserved.
  * Copyright (c) 2016-2017 Intel, Inc. All rights reserved.
  * $COPYRIGHT$
@@ -289,10 +289,20 @@ typedef pmix_status_t (*pmix_gds_base_module_add_nspace_fn_t)(const char *nspace
                                                               size_t ninfo);
 
 /* define a convenience macro for add_nspace based on peer */
-#define PMIX_GDS_ADD_NSPACE(s, p, n, i, ni)                 \
+#define PMIX_GDS_ADD_NSPACE(s, n, i, ni)                    \
     do {                                                    \
-        pmix_gds_base_module_t *_g = (p)->nptr->compat.gds; \
-        (s) = _g->add_nspace(n, i, ni);                     \
+        pmix_gds_base_active_module_t *_g;                  \
+        pmix_status_t _s = PMIX_SUCCESS;                    \
+        (s) = PMIX_SUCCESS;                                 \
+        PMIX_LIST_FOREACH(_g, &pmix_gds_globals.actives,    \
+                          pmix_gds_base_active_module_t) {  \
+            if (NULL != _g->module->add_nspace) {           \
+                _s = _g->module->add_nspace(n, i, ni);      \
+            }                                               \
+            if (PMIX_SUCCESS != _s) {                       \
+                (s) = PMIX_ERROR;                           \
+            }                                               \
+        }                                                   \
     } while(0)
 
 
@@ -306,10 +316,20 @@ typedef pmix_status_t (*pmix_gds_base_module_add_nspace_fn_t)(const char *nspace
 typedef pmix_status_t (*pmix_gds_base_module_del_nspace_fn_t)(const char* nspace);
 
 /* define a convenience macro for del_nspace based on peer */
-#define PMIX_GDS_DEL_NSPACE(s, p, n)                        \
+#define PMIX_GDS_DEL_NSPACE(s, n)                           \
     do {                                                    \
-        pmix_gds_base_module_t *_g = p->nptr->compat.gds;   \
-        (s) = _g->del_nspace(n);                            \
+        pmix_gds_base_active_module_t *_g;                  \
+        pmix_status_t _s = PMIX_SUCCESS;                    \
+        (s) = PMIX_SUCCESS;                                 \
+        PMIX_LIST_FOREACH(_g, &pmix_gds_globals.actives,    \
+                          pmix_gds_base_active_module_t) {  \
+            if (NULL != _g->module->del_nspace) {           \
+                _s = _g->module->del_nspace(n);             \
+            }                                               \
+            if (PMIX_SUCCESS != _s) {                       \
+                (s) = PMIX_ERROR;                           \
+            }                                               \
+        }                                                   \
     } while(0)
 
 

@@ -383,15 +383,11 @@ static void _register_nspace(int sd, short args, void *cbdata)
         }
     }
 
-    /* register nspace for each activate components
-     *  TODO: make macro */
-    do {
-        pmix_gds_base_active_module_t *mod;
-        pmix_status_t rc;
-        PMIX_LIST_FOREACH(mod, &pmix_gds_globals.actives, pmix_gds_base_active_module_t) {
-            rc = mod->module->add_nspace(nptr->nspace, cd->info, cd->ninfo);
-        }
-    } while(0);
+    /* register nspace for each activate components */
+    PMIX_GDS_ADD_NSPACE(rc, nptr->nspace, cd->info, cd->ninfo);
+    if (PMIX_SUCCESS != rc) {
+        goto release;
+    }
 
     /* store this data in our own GDS module - we will retrieve
      * it later so it can be passed down to the launched procs
@@ -451,7 +447,7 @@ static void _deregister_nspace(int sd, short args, void *cbdata)
     }
 
     /* let our local storage clean up */
-    PMIX_GDS_DEL_NSPACE(rc, pmix_globals.mypeer, cd->proc.nspace);
+    PMIX_GDS_DEL_NSPACE(rc, cd->proc.nspace);
     if (PMIX_SUCCESS != rc) {
         PMIX_ERROR_LOG(rc);
     }
