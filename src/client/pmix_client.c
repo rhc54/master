@@ -5,7 +5,7 @@
  *                         and Technology (RIST). All rights reserved.
  * Copyright (c) 2014      Artem Y. Polyakov <artpol84@gmail.com>.
  *                         All rights reserved.
- * Copyright (c) 2016      Mellanox Technologies, Inc.
+ * Copyright (c) 2016-2017 Mellanox Technologies, Inc.
  *                         All rights reserved.
  * Copyright (c) 2016      IBM Corporation.  All rights reserved.
  * $COPYRIGHT$
@@ -469,20 +469,12 @@ PMIX_EXPORT pmix_status_t PMIx_Init(pmix_proc_t *proc,
     /* select the gds compat module we will use to interact with
      * our server- the selection will be based
      * on the corresponding envars that should have been passed
-     * to us at launch */
-    evar = getenv("PMIX_GDS_MODULE");
-    PMIX_INFO_LOAD(&ginfo, PMIX_GDS_MODULE, evar, PMIX_STRING);
-    pmix_client_globals.myserver.nptr->compat.gds = pmix_gds_base_assign_module(&ginfo, 1);
-    if (NULL == pmix_client_globals.myserver.nptr->compat.gds) {
-        PMIX_INFO_DESTRUCT(&ginfo);
-        return PMIX_ERR_INIT;
-    }
-    PMIX_INFO_DESTRUCT(&ginfo);
-    /* now select a GDS module for our own internal use - the user may
-     * have passed down a directive for this purpose. If they did, then
-     * use it. Otherwise, we want the "hash" module */
+     * to us at launch
+     * the user may have passed down a directive for this
+     * purpose. If they did, then use it. Otherwise, will be
+     * used the envars */
     found = false;
-    if (NULL != info) {
+    if (info != NULL) {
         for (n=0; n < ninfo; n++) {
             if (0 == strncmp(info[n].key, PMIX_GDS_MODULE, PMIX_MAX_KEYLEN)) {
                 PMIX_INFO_LOAD(&ginfo, PMIX_GDS_MODULE, info[n].value.data.string, PMIX_STRING);
@@ -492,8 +484,18 @@ PMIX_EXPORT pmix_status_t PMIx_Init(pmix_proc_t *proc,
         }
     }
     if (!found) {
-        PMIX_INFO_LOAD(&ginfo, PMIX_GDS_MODULE, "hash", PMIX_STRING);
+        evar = getenv("PMIX_GDS_MODULE");
+        PMIX_INFO_LOAD(&ginfo, PMIX_GDS_MODULE, evar, PMIX_STRING);
     }
+    pmix_client_globals.myserver.nptr->compat.gds = pmix_gds_base_assign_module(&ginfo, 1);
+    if (NULL == pmix_client_globals.myserver.nptr->compat.gds) {
+        PMIX_INFO_DESTRUCT(&ginfo);
+        return PMIX_ERR_INIT;
+    }
+    PMIX_INFO_DESTRUCT(&ginfo);
+    /* now set a GDS module for our own internal use, we want the "hash"
+     * module */
+    PMIX_INFO_LOAD(&ginfo, PMIX_GDS_MODULE, "hash", PMIX_STRING);
     pmix_globals.mypeer->nptr->compat.gds = pmix_gds_base_assign_module(&ginfo, 1);
     if (NULL == pmix_globals.mypeer->nptr->compat.gds) {
         PMIX_INFO_DESTRUCT(&ginfo);
