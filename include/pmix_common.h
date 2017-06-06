@@ -4,7 +4,7 @@
  * Copyright (c) 2016-2017 Research Organization for Information Science
  *                         and Technology (RIST). All rights reserved.
  * Copyright (c) 2016      IBM Corporation.  All rights reserved.
- * Copyright (c) 2016      Mellanox Technologies, Inc.
+ * Copyright (c) 2016-2017 Mellanox Technologies, Inc.
  *                         All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -1091,6 +1091,28 @@ struct pmix_info_t {
 #define PMIX_INFO_OPTIONAL(m)       \
     (m)->flags &= ~PMIX_INFO_REQD;
 
+#define PMIX_INFO_UNLOAD(r, v, l)                              \
+    do {                                                       \
+        pmix_info_t *_info;                                    \
+        size_t _n, _ninfo;                                     \
+        pmix_kval_t *_kv;                                      \
+        _info = (pmix_info_t*)(v)->data.darray->array;         \
+        _ninfo = (v)->data.darray->size;                       \
+        for (_n = 0; _n < _ninfo; _n++){                       \
+            _kv = PMIX_NEW(pmix_kval_t);                       \
+            if (NULL == _kv) {                                 \
+                (r) = PMIX_ERR_NOMEM;                          \
+                break;                                         \
+            }                                                  \
+            _kv->key = strdup(_info[_n].key);                  \
+            PMIX_VALUE_XFER((r), _kv->value, &_info[_n].value);\
+            if (PMIX_SUCCESS != (r)) {                         \
+                PMIX_RELEASE(_kv);                             \
+                break;                                         \
+            }                                                  \
+            pmix_list_append((l), &_kv->super);                \
+        }                                                      \
+    } while(0)
 
 /****    PMIX LOOKUP RETURN STRUCT    ****/
 typedef struct pmix_pdata {

@@ -153,6 +153,7 @@ PMIX_EXPORT pmix_status_t PMIx_server_init(pmix_server_module_t *module,
     size_t n, m;
     pmix_kval_t *kv;
     bool protect;
+    pmix_info_t ginfo;
     char *protected[] = {
         PMIX_USERID,
         PMIX_GRPID,
@@ -217,7 +218,8 @@ PMIX_EXPORT pmix_status_t PMIx_server_init(pmix_server_module_t *module,
     }
 
     /* assign our internal gds module */
-    pmix_globals.mypeer->nptr->compat.gds = pmix_gds_base_assign_module(info, ninfo);
+    PMIX_INFO_LOAD(&ginfo, PMIX_GDS_MODULE, "hash", PMIX_STRING);
+    pmix_globals.mypeer->nptr->compat.gds = pmix_gds_base_assign_module(&ginfo, 1);
     if (NULL == pmix_globals.mypeer->nptr->compat.gds) {
         PMIX_ERROR_LOG(rc);
         return rc;
@@ -381,6 +383,12 @@ static void _register_nspace(int sd, short args, void *cbdata)
         }
     }
 
+    /* register nspace for each activate components */
+    PMIX_GDS_ADD_NSPACE(rc, nptr->nspace, cd->info, cd->ninfo);
+    if (PMIX_SUCCESS != rc) {
+        goto release;
+    }
+
     /* store this data in our own GDS module - we will retrieve
      * it later so it can be passed down to the launched procs
      * once they connect to us and we know what GDS module they
@@ -439,7 +447,7 @@ static void _deregister_nspace(int sd, short args, void *cbdata)
     }
 
     /* let our local storage clean up */
-    PMIX_GDS_DEL_NSPACE(rc, pmix_globals.mypeer, cd->proc.nspace);
+    PMIX_GDS_DEL_NSPACE(rc, cd->proc.nspace);
     if (PMIX_SUCCESS != rc) {
         PMIX_ERROR_LOG(rc);
     }
@@ -2322,7 +2330,8 @@ static pmix_status_t server_switchyard(pmix_peer_t *peer, uint32_t tag,
             return rc;
         }
         PMIX_SERVER_QUEUE_REPLY(peer, tag, reply);
-        return PMIX_SUCCESS; // don't reply twice
+        peer->nptr->ndelivered++;
+        return PMIX_SUCCESS;
     }
 
     if (PMIX_ABORT_CMD == cmd) {

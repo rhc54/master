@@ -13,13 +13,12 @@
 #define PMIX_SM_MMAP_H
 
 #include <src/include/pmix_config.h>
-
-
-#include "pmix_sm.h"
+#include <src/mca/pshmem/pshmem.h>
 
 BEGIN_C_DECLS
 
-extern pmix_sm_base_module_t pmix_sm_mmap_module;
+PMIX_EXPORT extern pmix_pshmem_base_component_t mca_pshmem_mmap_component;
+extern pmix_pshmem_base_module_t pmix_mmap_module;
 
 END_C_DECLS
 

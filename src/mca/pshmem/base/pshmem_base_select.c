@@ -96,5 +96,5 @@ int pmix_pshmem_base_select(void)
     if (!inserted) {
         return PMIX_ERR_NOT_FOUND;
     }
-    return PMIX_SUCCESS;;
+    return PMIX_SUCCESS;
 }
