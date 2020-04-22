@@ -12,6 +12,7 @@
 #include "src/include/pmix_config.h"
 
 #include <string.h>
+#include <ctype.h>
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
 #endif
@@ -45,6 +46,7 @@
 #include "src/util/os_path.h"
 #include "src/util/printf.h"
 #include "src/util/pmix_environ.h"
+#include "src/util/show_help.h"
 #include "src/mca/preg/preg.h"
 
 #include "src/mca/pmdl/pmdl.h"
@@ -99,8 +101,69 @@ static PMIX_CLASS_INSTANCE(pmdl_nspace_t,
 						   pmix_list_item_t,
 						   nscon, NULL);
 
+typedef struct {
+    pmix_list_item_t super;
+    char *source;
+    char *key;
+    char **envars;
+    char **values;
+} pmix_ompi5_keyval_t;
+static void kvcon(pmix_ompi5_keyval_t *p)
+{
+    p->source = NULL;
+    p->key = NULL;
+    p->envars = NULL;
+    p->values = NULL;
+}
+static void kvdes(pmix_ompi5_keyval_t *p)
+{
+    if (NULL != p->source) {
+        free(p->source);
+    }
+    if (NULL != p->key) {
+        free(p->key);
+    }
+    pmix_argv_free(p->envars);
+    pmix_argv_free(p->values);
+}
+static PMIX_CLASS_INSTANCE(pmix_ompi5_keyval_t,
+                           pmix_list_item_t,
+                           kvcon, kvdes);
+
+typedef struct {
+    pmix_list_item_t super;
+    char *title;
+    char *name;
+    pmix_list_t keyvals;
+} pmix_ompi5_section_t;
+static void scon(pmix_ompi5_section_t *p) {
+    p->title = NULL;
+    p->name = NULL;
+    PMIX_CONSTRUCT(&p->keyvals, pmix_list_t);
+}
+static void sdes(pmix_ompi5_section_t *p)
+{
+    if (NULL != p->title) {
+        free(p->title);
+    }
+    if (NULL != p->name) {
+        free(p->name);
+    }
+    PMIX_LIST_DESTRUCT(&p->keyvals);
+}
+static PMIX_CLASS_INSTANCE(pmix_ompi5_section_t,
+                           pmix_list_item_t,
+                           scon, sdes);
+
+
+/* internal functions */
+static pmix_status_t process_alias(char *aliasstring, pmix_list_t *params);
+static pmix_status_t process_tune(char *files, pmix_list_t *params);
+static pmix_status_t process_x(char *assignment, pmix_list_t *params);
+
 /* internal variables */
 static pmix_list_t mynspaces;
+static pmix_list_t sections;
 
 static pmix_status_t ompi5_init(void)
 {
@@ -108,6 +171,7 @@ static pmix_status_t ompi5_init(void)
                         "pmdl: ompi5 init");
 
     PMIX_CONSTRUCT(&mynspaces, pmix_list_t);
+    PMIX_CONSTRUCT(&sections, pmix_list_t);
 
     return PMIX_SUCCESS;
 }
@@ -115,6 +179,7 @@ static pmix_status_t ompi5_init(void)
 static void ompi5_finalize(void)
 {
     PMIX_LIST_DESTRUCT(&mynspaces);
+    PMIX_LIST_DESTRUCT(&sections);
 }
 
 static bool checkus(const pmix_info_t info[], size_t ninfo)
@@ -159,6 +224,377 @@ static bool checkus(const pmix_info_t info[], size_t ninfo)
     return takeus;
 }
 
+#define PMIX_OMPI5_MAX_LINE_LENGTH 1024
+
+static char *localgetline(FILE *fp)
+{
+    char *ret, *buff;
+    char input[PMIX_OMPI5_MAX_LINE_LENGTH];
+    int i = 0;
+
+    ret = fgets(input, PMIX_OMPI5_MAX_LINE_LENGTH, fp);
+    if (NULL != ret) {
+        if ('\0' != input[0]) {
+            input[strlen(input)-1] = '\0';  /* remove newline */
+            /* strip any leading whitespace */
+             while (' ' == input[i] || '\t' == input[i]) {
+                i++;
+            }
+        }
+       buff = strdup(&input[i]);
+       return buff;
+    }
+
+    return NULL;
+}
+
+static char *strip_quotes(char *p)
+{
+    char *pout;
+
+    /* strip any quotes around the args */
+    if ('\"' == p[0]) {
+        pout = strdup(&p[1]);
+    } else {
+        pout = strdup(p);
+    }
+    if ('\"' == pout[strlen(pout)- 1]) {
+        pout[strlen(pout)-1] = '\0';
+    }
+    return pout;
+}
+
+static char *getnextword(char *line, char **tail)
+{
+    int i = 0;
+    char *ptr;
+
+    if (NULL == line || '\0' == line[0]) {
+        return NULL;
+    }
+    /* scan string for first non-whitespace character */
+    while (isspace(line[i]) && '\0' != line[i]) {
+        ++i;
+    }
+    ptr = &line[i];
+    ++i;
+    if ('\0' == line[i]) {
+        *tail = NULL;
+        return ptr;  // only a single-char word
+    }
+    /* scan string for the next whitespace character */
+    while (!isspace(line[i]) && '\0' != line[i]) {
+        ++i;
+    }
+    if ('\0' == line[i]) {
+        *tail = NULL;
+    } else {
+        line[i] = '\0';
+        *tail = &line[i+1];
+    }
+
+    return strip_quotes(ptr);
+}
+
+static pmix_status_t doalias(char *source, char *line,
+                             char *wrd, pmix_list_t *tgt,
+                             bool overwrite)
+{
+    char *key, *word, *value, *tail;
+    pmix_ompi5_keyval_t *kv;
+
+    /* save as a key-value pair */
+    key = strdup(wrd);
+    /* might not have left whitespace before the '=' */
+    if ('=' == key[strlen(key)-1]) {
+        key[strlen(key)-1] = '\0';
+    }
+    /* the next 'word' should be an '=' or
+     * at least start with an '=' */
+    word = getnextword(line, &tail);
+    if ('=' != word[0]) {
+        /* this is an error */
+        pmix_show_help("help-pmdl.txt",
+                       "missing-equals",
+                       true, source, word);
+        free(key);
+        free(word);
+        return PMIX_ERR_BAD_PARAM;
+    }
+    /* they might not have left whitespace after the '=' */
+    if ('\0' != word[1]) {
+        value = strdup(word + 1);
+        free(word);
+    } else {
+        /* if they did leave a space, then word contains
+         * just the equal sign and tail contains the rest
+         * of the value */
+        value = strdup(tail);
+    }
+
+    /* parse the value to extract the MCA params/values */
+
+    /* do we have a conflicting value in this source? */
+    PMIX_LIST_FOREACH(kv, tgt, pmix_ompi5_keyval_t) {
+        if (0 == strcasecmp(kv->source, source)) {
+            /* if the source is the same, we do NOT allow
+             * conflicting values */
+            if (0 == strcmp(kv->key, key)) {
+                if (NULL != kv->envars) {
+                    for (n=0; NULL != kv->envars[n]; n++) {
+                        if (0 == strcmp(kv->envars[n], word)) {
+                            if (0 != strcmp(kv->value[n], value)) {
+                                /* have a conflict! */
+                                pmix_show_help("help-pmdl.txt",
+                                               "conflicting-kvals-same-source",
+                                               true,
+                                               source, key, value,
+                                               kv->key, kv->value);
+                                free(key);
+                                free(value);
+                                free(word);
+                                return PMIX_ERR_BAD_PARAM;
+                            }
+                            break;
+                        }
+                    }
+            }
+        } else {
+            /* if they are different sources, then we only
+             * allow overwrite if directed */
+            if (0 == strcmp(kv->key, key)) {
+                if (0 != strcmp(kv->value, value)) {
+                    if (!overwrite) {
+                        /* have a conflict! */
+                        pmix_show_help("help-pmdl.txt",
+                                       "conflicting-kvals",
+                                       true,
+                                       source, key, value,
+                                       kv->source, kv->key, kv->value);
+                        free(key);
+                        free(value);
+                        free(word);
+                        return PMIX_ERR_BAD_PARAM;
+                    }
+                    /* otherwise, just remove this value from
+                     * the list and we will replace it below */
+                    pmix_list_remove_item(tgt, &kv->super);
+                    break;
+                } else {
+                    /* if it is the same value, then we just
+                     * ignore it */
+                    free(key);
+                    free(value);
+                    free(word);
+                    return PMIX_SUCCESS;
+                }
+            }
+        }
+    }
+    pmix_output(0, "KVAL %s %s", key, value);
+    kv = PMIX_NEW(pmix_ompi5_keyval_t);
+    kv->source = strdup(source);
+    kv->key = key;
+    kv->value = value;
+    pmix_list_append(tgt, &kv->super);
+    free(word);
+    return PMIX_SUCCESS;
+}
+
+static pmix_status_t dosection(char *source, FILE *fp,
+                               char *title, char *name,
+                               char **nxtline, char **nxtword)
+{
+    char *line, *word, *tail;
+    pmix_status_t rc;
+    pmix_ompi5_section_t *section, *sptr;
+
+    /* see if we already have the designated section */
+    section = NULL;
+    PMIX_LIST_FOREACH(sptr, &sections, pmix_ompi5_section_t) {
+        if (0 == strcasecmp(sptr->title, title)) {
+            if (NULL == name && NULL == sptr->name) {
+                /* we have a match */
+                section = sptr;
+                break;
+            }
+            if (NULL != name && NULL != sptr->name &&
+                0 == strcasecmp(name, sptr->name)) {
+                /* have a match */
+                section = sptr;
+                break;
+            }
+        }
+    }
+    if (NULL == section) {
+        /* add it */
+        section = PMIX_NEW(pmix_ompi5_section_t);
+        section->title = strdup(title);
+        if (NULL != name) {
+            section->name = strdup(name);
+        }
+        pmix_output(0, "ADDING SECTION %s %s", title, name);
+        pmix_list_append(&sections, &section->super);
+    }
+
+    while (NULL != (line = localgetline(fp))) {
+        /* if the line is blank, then it is a comment and we ignore it */
+        if (0 == strlen(line)) {
+            pmix_output(0, "BLANK");
+            free(line);
+            continue;
+        }
+        /* if the first character of the first word on a line is '#',
+         * then the line is a comment and we ignore it */
+        word = getnextword(line, &tail);
+        pmix_output(0, "WORD %s", word);
+        if ('#' == word[0]) {
+            free(line);
+            free(word);
+            continue;
+        }
+        /* if the first character of the first word is a '[', then
+         * this is the start of the next section */
+        if ('[' == word[0]) {
+            pmix_output(0, "NEXT SECTION");
+            *nxtline = tail;
+            *nxtword = word;
+            return PMIX_OPERATION_SUCCEEDED;
+        }
+        pmix_output(0, "SAVING SRC %s TAIL %s WORD %s", source, tail, word);
+        /* save as a key-value pair */
+        rc = dokval(source, tail, word, &section->keyvals, false);
+        free(line);
+        free(word);
+        if (PMIX_SUCCESS != rc) {
+            return rc;
+        }
+    }
+
+    /* we get here if we read to the end of the file */
+    *nxtline = NULL;
+    *nxtword = NULL;
+    return PMIX_SUCCESS;
+}
+
+static pmix_status_t parsefile(char *source, FILE *fp,
+                               pmix_list_t *values,
+                               bool overwrite)
+{
+    char *line, *word, *tail;
+    char **header, *title, *name;
+    pmix_status_t rc;
+
+    while (NULL != (line = localgetline(fp))) {
+        /* if the line is blank, then it is a comment and we ignore it */
+        if (0 == strlen(line)) {
+            free(line);
+            continue;
+        }
+        /* if the first character of the first word on a line is '#',
+         * then the line is a comment and we ignore it */
+        word = getnextword(line, &tail);
+        if ('#' == word[0]) {
+            free(line);
+            free(word);
+            continue;
+        }
+    parseword:
+        /* if the word starts with '[', then it is a section header */
+        if ('[' == word[0]) {
+            pmix_output(0, "SECTION: %s", word);
+            /* if there is just the '[', then they left whitespace between
+             * it and the title of the section */
+            if ('\0' == word[1]) {
+                word = getnextword(tail, &tail);
+            } else {
+                ++word;  // step over the '['
+            }
+            pmix_output(0, "WORD %s", word);
+            /* the ':' acts as a delimiter between the section title and
+             * the name they gave that section (e.g., "[alias:net]"). They
+             * might have left whitespace between the title, ':', and name,
+             * or it all might be in one big "word", so handle those cases */
+            header = pmix_argv_split(word, ':');
+            if (2 == pmix_argv_count(header)) {
+                /* they gave it as one big "word", so we have both the title
+                 * and name here */
+                title = header[0];
+                name = header[1];
+                /* the ']' could be the last character in the name */
+                if (']' == name[strlen(name)-1]) {
+                    name[strlen(name)-1] = '\0';
+                }
+            } else if (1 == pmix_argv_count(header)) {
+                title = header[0];
+                pmix_output(0, "TITLE %s", title);
+                /* the ']' could be the last character in the title if the
+                 * section does not have a name (e.g., [mca]) */
+                if (']' == title[strlen(title)-1]) {
+                    title[strlen(title)-1] = '\0';
+                    /* we can just move on as there is no name */
+                    name = NULL;
+                    rc = dosection(source, fp, title, name, &tail, &word);
+                    pmix_argv_free(header);
+                    if (PMIX_OPERATION_SUCCEEDED == rc) {
+                        goto parseword;
+                     }
+                    return rc;
+                }
+                /* we have to go get the name */
+                name = getnextword(tail, &tail);
+                /* this might be just the ':' */
+                if (':' == name[0]) {
+                    if ('\0' == name[1]) {
+                        name = getnextword(tail, &tail);
+                    } else {
+                        ++name; // shift past the colon
+                    }
+                }
+                pmix_output(0, "NAME %s", name);
+                /* some sections do not have a name - in those cases,
+                 * the returned name would be just a ']' */
+                if (NULL == name || ']' == name[0]) {
+                    name = NULL;
+                    rc = dosection(source, fp, title, name, &tail, &word);
+                    pmix_argv_free(header);
+                    if (PMIX_OPERATION_SUCCEEDED == rc) {
+                        goto parseword;
+                     }
+                    return rc;
+                }
+                /* the ']' could be on the end of the word */
+                if (']' == name[strlen(name)-1]) {
+                    name[strlen(name)-1] = '\0';
+                }
+            }
+            pmix_output(0, "FINAL TITLE %s NAME %s", title, name);
+            /* if the section is titled 'mca', then the section will just
+             * include plain MCA params - we don't track that separately */
+            if (0 == strcasecmp("mca", title)) {
+                pmix_argv_free(header);
+                continue;
+            }
+            /* process the section */
+            rc = dosection(source, fp, title, name, &tail, &word);
+            pmix_argv_free(header);
+            if (PMIX_OPERATION_SUCCEEDED == rc) {
+                goto parseword;
+             }
+            return rc;
+        } else {
+            /* if it isn't a section, then it must just be a plain MCA
+             * parameter setting */
+            rc = dokval(source, tail, word, values, overwrite);
+            if (PMIX_SUCCESS != rc) {
+                return rc;
+            }
+        }
+    }
+
+    return PMIX_SUCCESS;
+}
+
 static pmix_status_t harvest_envars(pmix_namespace_t *nptr,
                                     const pmix_info_t info[], size_t ninfo,
                                     pmix_list_t *ilist,
@@ -168,11 +604,12 @@ static pmix_status_t harvest_envars(pmix_namespace_t *nptr,
     pmix_status_t rc;
     uint32_t uid = UINT32_MAX;
     const char *home;
-    pmix_list_t params;
-    pmix_mca_base_var_file_value_t *fv;
-    pmix_kval_t *kv;
+    pmix_list_t params, mcaparams;
+    pmix_kval_t *kv, *kvnxt;
     size_t n;
     char *file, *tmp, *evar;
+    pmix_ompi5_keyval_t *kv5;
+    FILE *fp;
 
     pmix_output_verbose(2, pmix_pmdl_base_framework.framework_output,
                         "pmdl:ompi5:harvest envars");
@@ -193,6 +630,8 @@ static pmix_status_t harvest_envars(pmix_namespace_t *nptr,
     }
     /* flag that we worked on this */
     pmix_argv_append_nosize(priors, "ompi5");
+    PMIX_CONSTRUCT(&mcaparams, pmix_list_t);
+    PMIX_CONSTRUCT(&params, pmix_list_t);
 
     if (NULL != nptr) {
         /* see if we already have this nspace */
@@ -214,41 +653,27 @@ static pmix_status_t harvest_envars(pmix_namespace_t *nptr,
     if (NULL != (evar = getenv("OMPIHOME"))) {
         /* look for the default MCA param file */
         file = pmix_os_path(false, evar, "etc", "openmpi-mca-params.conf", NULL);
-        PMIX_CONSTRUCT(&params, pmix_list_t);
-        pmix_mca_base_parse_paramfile(file, &params);
-        free(file);
-        PMIX_LIST_FOREACH(fv, &params, pmix_mca_base_var_file_value_t) {
-            /* need to prefix the param name */
-            kv = PMIX_NEW(pmix_kval_t);
-            if (NULL == kv) {
-                PMIX_LIST_DESTRUCT(&params);
-                return PMIX_ERR_OUT_OF_RESOURCE;
+        if (NULL != (fp = fopen(file, "r"))) {
+            /* parse the file */
+            rc = parsefile(file, fp, &mcaparams, true);
+            if (PMIX_SUCCESS != rc) {
+                /* error reading the file */
+                goto done;
             }
-            kv->key = strdup(PMIX_SET_ENVAR);
-            kv->value = (pmix_value_t*)malloc(sizeof(pmix_value_t));
-            if (NULL == kv->value) {
-                PMIX_RELEASE(kv);
-                PMIX_LIST_DESTRUCT(&params);
-                return PMIX_ERR_OUT_OF_RESOURCE;
-            }
-            kv->value->type = PMIX_ENVAR;
-            pmix_asprintf(&tmp, "OMPI_MCA_%s", fv->mbvfv_var);
-            PMIX_ENVAR_LOAD(&kv->value->data.envar, tmp, fv->mbvfv_value, ':');
-            free(tmp);
-            pmix_list_append(ilist, &kv->super);
         }
-        PMIX_LIST_DESTRUCT(&params);
         /* add an envar indicating that we did this so the OMPI
          * processes won't duplicate it */
         kv = PMIX_NEW(pmix_kval_t);
         if (NULL == kv) {
-            return PMIX_ERR_OUT_OF_RESOURCE;
+            rc = PMIX_ERR_OUT_OF_RESOURCE;
+            goto done;
         }
         kv->key = strdup(PMIX_SET_ENVAR);
         kv->value = (pmix_value_t*)malloc(sizeof(pmix_value_t));
         if (NULL == kv->value) {
             PMIX_RELEASE(kv);
-            return PMIX_ERR_OUT_OF_RESOURCE;
+            rc = PMIX_ERR_OUT_OF_RESOURCE;
+            goto done;
         }
         kv->value->type = PMIX_ENVAR;
         PMIX_ENVAR_LOAD(&kv->value->data.envar, "OPAL_SYS_PARAMS_GIVEN", "1", ':');
@@ -261,7 +686,7 @@ static pmix_status_t harvest_envars(pmix_namespace_t *nptr,
             if (PMIX_CHECK_KEY(&info[n], PMIX_USERID)) {
                 PMIX_VALUE_GET_NUMBER(rc, &info[n].value, uid, uint32_t);
                 if (PMIX_SUCCESS != rc) {
-                    return rc;
+                    goto done;
                 }
                 break;
             }
@@ -273,49 +698,62 @@ static pmix_status_t harvest_envars(pmix_namespace_t *nptr,
     /* try to get their home directory */
     home = pmix_home_directory(uid);
     if (NULL != home) {
+        /* parse the user-level default params, overwriting any
+         * duplicates from the system-level params */
         file = pmix_os_path(false, home, ".openmpi", "mca-params.conf", NULL);
-        PMIX_CONSTRUCT(&params, pmix_list_t);
-        pmix_mca_base_parse_paramfile(file, &params);
-        free(file);
-        PMIX_LIST_FOREACH(fv, &params, pmix_mca_base_var_file_value_t) {
-            /* need to prefix the param name */
-            kv = PMIX_NEW(pmix_kval_t);
-            if (NULL == kv) {
-                PMIX_LIST_DESTRUCT(&params);
-                return PMIX_ERR_OUT_OF_RESOURCE;
+        if (NULL != (fp = fopen(file, "r"))) {
+            /* parse the file */
+            rc = parsefile(file, fp, &mcaparams, true);
+            if (PMIX_SUCCESS != rc) {
+                /* error reading the file */
+                goto done;
             }
-            kv->key = strdup(PMIX_SET_ENVAR);
-            kv->value = (pmix_value_t*)malloc(sizeof(pmix_value_t));
-            if (NULL == kv->value) {
-                PMIX_RELEASE(kv);
-                PMIX_LIST_DESTRUCT(&params);
-                return PMIX_ERR_OUT_OF_RESOURCE;
-            }
-            kv->value->type = PMIX_ENVAR;
-            pmix_asprintf(&tmp, "OMPI_MCA_%s", fv->mbvfv_var);
-            PMIX_ENVAR_LOAD(&kv->value->data.envar, tmp, fv->mbvfv_value, ':');
-            free(tmp);
-            pmix_list_append(ilist, &kv->super);
         }
-        PMIX_LIST_DESTRUCT(&params);
         /* add an envar indicating that we did this so the OMPI
          * processes won't duplicate it */
         kv = PMIX_NEW(pmix_kval_t);
         if (NULL == kv) {
-            return PMIX_ERR_OUT_OF_RESOURCE;
+            rc = PMIX_ERR_OUT_OF_RESOURCE;
+            goto done;
         }
         kv->key = strdup(PMIX_SET_ENVAR);
         kv->value = (pmix_value_t*)malloc(sizeof(pmix_value_t));
         if (NULL == kv->value) {
             PMIX_RELEASE(kv);
-            return PMIX_ERR_OUT_OF_RESOURCE;
+            rc = PMIX_ERR_OUT_OF_RESOURCE;
+            goto done;
         }
         kv->value->type = PMIX_ENVAR;
         PMIX_ENVAR_LOAD(&kv->value->data.envar, "OPAL_USER_PARAMS_GIVEN", "1", ':');
         pmix_list_append(ilist, &kv->super);
     }
 
-    /* harvest our local envars */
+    /* coalesce the results into a single list of envars */
+    PMIX_LIST_FOREACH(kv5, &mcaparams, pmix_ompi5_keyval_t) {
+        kv = PMIX_NEW(pmix_kval_t);
+        if (NULL == kv) {
+            rc = PMIX_ERR_OUT_OF_RESOURCE;
+            goto done;
+        }
+        kv->key = strdup(PMIX_SET_ENVAR);
+        kv->value = (pmix_value_t*)malloc(sizeof(pmix_value_t));
+        if (NULL == kv->value) {
+            PMIX_RELEASE(kv);
+            rc = PMIX_ERR_OUT_OF_RESOURCE;
+            goto done;
+        }
+        kv->value->type = PMIX_ENVAR;
+        (void)pmix_asprintf(&tmp, "OMPI_MCA_%s", kv5->key);
+        PMIX_ENVAR_LOAD(&kv->value->data.envar, tmp, kv5->value, ':');
+        free(tmp);
+        pmix_list_append(&params, &kv->super);
+    }
+    /* clear our cached list */
+    PMIX_LIST_DESTRUCT(&mcaparams);
+    PMIX_CONSTRUCT(&mcaparams, pmix_list_t);
+
+    /* harvest our local envars. Local envars overwrite anything obtained
+    * from the default param files */
     if (NULL != mca_pmdl_ompi5_component.include) {
         pmix_output_verbose(2, pmix_pmdl_base_framework.framework_output,
                             "pmdl: ompi5 harvesting envars %s excluding %s",
@@ -323,13 +761,44 @@ static pmix_status_t harvest_envars(pmix_namespace_t *nptr,
                             (NULL == mca_pmdl_ompi5_component.excparms) ? "NONE" : mca_pmdl_ompi5_component.excparms);
         rc = pmix_util_harvest_envars(mca_pmdl_ompi5_component.include,
                                       mca_pmdl_ompi5_component.exclude,
-                                      ilist);
+                                      &params);
         if (PMIX_SUCCESS != rc) {
-            return rc;
+            goto done;
         }
     }
 
-    return PMIX_SUCCESS;
+    /* Look for MCA params that specifically direct us to use an
+     * "alias" (which replaces the alias name with a set of one or
+     * more MCA params), "tune" (which requires that we parse
+     * another file to obtain a set of one or more MCA params),
+     * or "dash_x" (which just sets the envar value) */
+    PMIX_LIST_FOREACH_SAFE(kv, kvnxt, &params, pmix_kval_t) {
+        if (0 == strcmp("OMPI_MCA_alias", kv->value->data.envar.envar)) {
+            /* process the line to extract the defined envars */
+            rc = process_alias(kv->value->data.envar.value, &params);
+        } else if (0 == strcmp("OMPI_MCA_tune", kv->value->data.envar.envar)) {
+            rc = process_tune_files(kv->value->data.envar.value, &params);
+            /* go thru the results and coalesce them into the final
+             * list, overwriting as required */
+
+        }
+    }
+
+    /* the "-x" option overrides all others */
+    PMIX_LIST_FOREACH_SAFE(kv, kvnxt, &params, pmix_kval_t) {
+        if (0 == strcmp("OMPI_MCA_dash_x", kv->value->data.envar.envar)) {
+            rc = process_x(kv->value->data.envar.value, &params);
+            if (PMIX_SUCCESS != rc) {
+                goto done;
+            }
+            break;
+        }
+    }
+
+  done:
+    PMIX_LIST_DESTRUCT(&mcaparams);
+    PMIX_LIST_DESTRUCT(&params);
+    return rc;
 }
 
 
@@ -1011,4 +1480,70 @@ static void deregister_nspace(pmix_namespace_t *nptr)
 			return;
 		}
 	}
+}
+
+/*****    SUPPORT FUNCTIONS    *****/
+static pmix_status_t process_alias(char *aliasstring, pmix_list_t *params)
+{
+    pmix_status_t rc = PMIX_SUCCESS;
+    char **aliases, **pair;
+    pmix_ompi5_keyval_t *kv5, *kptr;
+    pmix_ompi5_section_t *s5;
+    char *line, *tail, *word, *param, *value;
+    size_t n;
+
+    /* there may be multiple comma-delimited aliases on the line */
+    aliases = pmix_argv_split(aliasstring, ',');
+    for (n=0; NULL != aliases[n]; n++) {
+        /* each alias consists of a title:name pair */
+        pair = pmix_argv_split(aliases[n], ':');
+        /* lookup the alias */
+        kv5 = NULL;
+        PMIX_LIST_FOREACH(s5, &sections, pmix_ompi5_section_t) {
+            if (0 == strcasecmp(s5->title, "alias") &&
+                (NULL != s5->name && 0 == strcasecmp(s5->name, pair[0]))) {
+                /* this is the alias we want */
+                PMIX_LIST_FOREACH(kptr, &s5->keyvals, pmix_ompi5_keyval_t) {
+                    if (0 == strcasecmp(kptr->key, pair[1])) {
+                        kv5 = kptr;
+                        goto next;
+                    }
+                }
+            }
+        }
+      next:
+        if (NULL == kv5) {
+            /* unknown alias */
+            pmix_show_help("help-pmdl.txt", "unknown-alias", true, pair[0], pair[1]);
+            rc = PMIX_ERR_BAD_PARAM;
+            goto done;
+        }
+        /* the alias consists of a cmdline-like set of directives that can
+         * include MCA params and -x values */
+        line = kv5->value;
+        while (NULL != (word = getnextword(line, &tail))) {
+            if (0 == strcmp(word, "--mca")) {
+                /* the next two words are the param and its value */
+                param = getnextword(tail, &tail);
+                value = getnextword(tail, &tail);
+            }
+        }
+        /* alias values are not allowed to conflict with other values found
+         * in files or with each other */
+
+    }
+
+  done:
+    pmix_argv_free(aliases);
+    return rc;
+}
+
+static pmix_status_t process_tune(char *files, pmix_list_t *params)
+{
+    return PMIX_SUCCESS;
+}
+
+static pmix_status_t process_x(char *assignment, pmix_list_t *params)
+{
+    return PMIX_SUCCESS;
 }
