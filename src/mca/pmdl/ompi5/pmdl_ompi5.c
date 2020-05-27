@@ -105,6 +105,10 @@ typedef struct {
     pmix_list_item_t super;
     char *source;
     char *key;
+    /* in most cases, there is only one envar-value
+     * pair for a given key. However, in the case
+     * of aliases, there may be any number of envar-value
+     * pairs associated with a given alias */
     char **envars;
     char **values;
 } pmix_ompi5_keyval_t;
@@ -302,6 +306,7 @@ static pmix_status_t doalias(char *source, char *line,
 {
     char *key, *word, *value, *tail;
     pmix_ompi5_keyval_t *kv;
+    size_t n;
 
     /* save as a key-value pair */
     key = strdup(wrd);
@@ -324,13 +329,13 @@ static pmix_status_t doalias(char *source, char *line,
     /* they might not have left whitespace after the '=' */
     if ('\0' != word[1]) {
         value = strdup(word + 1);
-        free(word);
     } else {
         /* if they did leave a space, then word contains
          * just the equal sign and tail contains the rest
          * of the value */
         value = strdup(tail);
     }
+    free(word);
 
     /* parse the value to extract the MCA params/values */
 
@@ -343,21 +348,28 @@ static pmix_status_t doalias(char *source, char *line,
                 if (NULL != kv->envars) {
                     for (n=0; NULL != kv->envars[n]; n++) {
                         if (0 == strcmp(kv->envars[n], word)) {
-                            if (0 != strcmp(kv->value[n], value)) {
+                            if (0 != strcmp(kv->values[n], value)) {
                                 /* have a conflict! */
                                 pmix_show_help("help-pmdl.txt",
                                                "conflicting-kvals-same-source",
                                                true,
                                                source, key, value,
-                                               kv->key, kv->value);
+                                               kv->key, kv->values[n]);
                                 free(key);
                                 free(value);
                                 free(word);
                                 return PMIX_ERR_BAD_PARAM;
+                            } else {
+                                /* if the envar and the value both match,
+                                 * then we just ignore this input */
+                                free(key);
+                                free(value);
+                                free(word);
+                                return PMIX_SUCCESS;
                             }
-                            break;
                         }
                     }
+                }
             }
         } else {
             /* if they are different sources, then we only
