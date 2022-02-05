@@ -2,7 +2,7 @@
  * Copyright (c) 2015-2020 Intel, Inc.  All rights reserved.
  * Copyright (c) 2016      IBM Corporation.  All rights reserved.
  *
- * Copyright (c) 2021      Nanook Consulting.  All rights reserved.
+ * Copyright (c) 2021-2022 Nanook Consulting.  All rights reserved.
  * $COPYRIGHT$
  *
  * Additional copyrights may follow
@@ -227,8 +227,54 @@ static pmix_status_t collect_inventory(pmix_info_t directives[], size_t ndirs,
 static pmix_status_t deliver_inventory(pmix_info_t info[], size_t ninfo,
                                        pmix_info_t directives[], size_t ndirs)
 {
+    size_t n;
+    bool cache = false;
+    pmix_buffer_t bkt;
+    int32_t cnt;
+    pmix_status_t rc = PMIX_SUCCESS;
+    uint8_t *data;
+    size_t size;
+    bool release = false;
+    bool found = false;
+
+    /* prep the unpack buffer */
+    PMIX_CONSTRUCT(&bkt, pmix_buffer_t);
+
     /* look for our inventory blob */
     PMIX_HIDE_UNUSED_PARAMS(info, ninfo, directives, ndirs);
+    for (n = 0; n < ninfo; n++) {
+        /* look for my key */
+        if (PMIX_CHECK_KEY(&info[n], PMIX_PGPU_NVD_BLOB)) {
+            pmix_output_verbose(2, pmix_pgpu_base_framework.framework_output,
+                                "pgpu:nvd:deliver_inventory found my blob");
+            found = true;
 
+            /* if this is a compressed byte object, decompress it */
+            if (PMIX_COMPRESSED_BYTE_OBJECT == info[n].value.type) {
+                pmix_compress.decompress(&data, &size, (uint8_t *) info[n].value.data.bo.bytes,
+                                         info[n].value.data.bo.size);
+                release = true;
+            } else {
+                data = (uint8_t *) info[n].value.data.bo.bytes;
+                size = info[n].value.data.bo.size;
+            }
+            PMIX_LOAD_BUFFER_NON_DESTRUCT(pmix_globals.mypeer, &bkt, data, size);
+            break;
+        }
+    }
+    if (!found) {
+        return PMIX_SUCCESS;
+    }
+
+    /* see if we were asked to cache the inventory */
+    for (n=0; n < ndirs; n++) {
+        if (PMIX_CHECK_KEY(&directives[n], PMIX_TOPOLOGY_CACHE)) {
+            cache = true;
+            break;
+        }
+    }
+
+    /* unpack the data and store it for our use */
+    
     return PMIX_SUCCESS;
 }

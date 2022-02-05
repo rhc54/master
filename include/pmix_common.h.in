@@ -187,7 +187,7 @@ typedef uint32_t pmix_rank_t;
 #define PMIX_BIND_PROGRESS_THREAD           "pmix.bind.pt"          // (char*) Comma-delimited ranges of CPUs that the internal PMIx progress
                                                                     //         thread shall be bound to
 #define PMIX_BIND_REQUIRED                  "pmix.bind.reqd"        // (bool) Return error if the internal PMIx progress thread cannot be bound
-
+#define PMIX_TOPOLOGY_CACHE                 "pmix.topo.cache"       // (char*) Name of a file storing the session-wide topology information
 
 /* tool-related attributes */
 #define PMIX_TOOL_NSPACE                    "pmix.tool.nspace"      // (char*) Name of the nspace to use for this tool
