@@ -78,6 +78,7 @@ typedef struct pmix_pmdl_globals_t pmix_pmdl_globals_t;
 
 PMIX_EXPORT extern pmix_pmdl_globals_t pmix_pmdl_globals;
 
+PMIX_EXPORT pmix_status_t pmix_pmdl_base_process_envars(const pmix_info_t info[], size_t ninfo);
 PMIX_EXPORT pmix_status_t pmix_pmdl_base_harvest_envars(char *nspace, const pmix_info_t info[],
                                                         size_t ninfo, pmix_list_t *ilist);
 PMIX_EXPORT void pmix_pmdl_base_parse_file_envars(pmix_list_t *ilist);

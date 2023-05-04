@@ -54,6 +54,7 @@ pmix_pmdl_globals_t pmix_pmdl_globals = {
 };
 
 pmix_pmdl_API_module_t pmix_pmdl = {
+    .process_envars = pmix_pmdl_base_process_envars,
     .harvest_envars = pmix_pmdl_base_harvest_envars,
     .parse_file_envars = pmix_pmdl_base_parse_file_envars,
     .setup_nspace = pmix_pmdl_base_setup_nspace,

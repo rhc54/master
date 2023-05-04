@@ -49,6 +49,26 @@
 
 #include "src/mca/pmdl/base/base.h"
 
+pmix_status_t pmix_pmdl_base_process_envars(const pmix_info_t info[], size_t ninfo)
+{
+    pmix_pmdl_base_active_module_t *active;
+    pmix_status_t rc;
+
+    pmix_output_verbose(2, pmix_pmdl_base_framework.framework_output,
+                        "pmdl:process envars called");
+
+    PMIX_LIST_FOREACH (active, &pmix_pmdl_globals.actives, pmix_pmdl_base_active_module_t) {
+        if (NULL != active->module->process_envars) {
+            rc = active->module->process_envars(info, ninfo);
+            if (PMIX_SUCCESS != rc && PMIX_ERR_TAKE_NEXT_OPTION != rc) {
+                /* true error */
+                return rc;
+            }
+        }
+    }
+    return rc;
+}
+
 pmix_status_t pmix_pmdl_base_harvest_envars(char *nspace, const pmix_info_t info[], size_t ninfo,
                                             pmix_list_t *ilist)
 {

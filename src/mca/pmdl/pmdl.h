@@ -51,6 +51,11 @@ typedef pmix_status_t (*pmix_pmdl_base_module_init_fn_t)(void);
  */
 typedef void (*pmix_pmdl_base_module_fini_fn_t)(void);
 
+/* Process local model-specific envars and translate those
+ * to PMIx-related values as desired */
+typedef pmix_status_t (*pmix_pmdl_base_process_envars_fn_t)(const pmix_info_t info[],
+                                                            size_t ninfo);
+
 /* Harvest envars for this programming model so they can be forwarded
  * to backend processes */
 typedef pmix_status_t (*pmix_pmdl_base_module_harvest_envars_fn_t)(pmix_namespace_t *nptr,
@@ -103,6 +108,7 @@ typedef struct {
     char *name;
     pmix_pmdl_base_module_init_fn_t                 init;
     pmix_pmdl_base_module_fini_fn_t                 finalize;
+    pmix_pmdl_base_process_envars_fn_t              process_envars;
     pmix_pmdl_base_module_harvest_envars_fn_t       harvest_envars;
     pmix_pmdl_base_module_parse_file_envars_fn_t    parse_file_envars;
     pmix_pmdl_base_module_setup_ns_fn_t             setup_nspace;
@@ -124,6 +130,7 @@ typedef struct {
     char *name;
     pmix_pmdl_base_module_init_fn_t                 init;
     pmix_pmdl_base_module_fini_fn_t                 finalize;
+    pmix_pmdl_base_process_envars_fn_t              process_envars;
     pmix_pmdl_base_API_harvest_envars_fn_t          harvest_envars;
     pmix_pmdl_base_module_parse_file_envars_fn_t    parse_file_envars;
     pmix_pmdl_base_module_setup_ns_fn_t             setup_nspace;

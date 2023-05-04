@@ -190,15 +190,39 @@ int pmix_init_util(pmix_info_t info[], size_t ninfo, char *libdir)
         return ret;
     }
 
-    /* register params for pmix */
-    if (PMIX_SUCCESS != (ret = pmix_register_params())) {
-        fprintf(stderr, "pmix_register_params failed\n");
-        return ret;
-    }
-
     /* initialize the mca */
     if (PMIX_SUCCESS != (ret = pmix_mca_base_open(libdir))) {
         fprintf(stderr, "pmix_mca_base_open failed\n");
+        return ret;
+    }
+
+    /* we must open the "pmdl" framework early here so that
+     * we can process any envars that control our behavior.
+     */
+    ret = pmix_mca_base_framework_open(&pmix_pmdl_base_framework,
+                                       PMIX_MCA_BASE_OPEN_DEFAULT);
+    if (PMIX_SUCCESS != ret) {
+        fprintf(stderr, "pmdl open failed\n");
+        return ret;
+    }
+    if (PMIX_SUCCESS != (ret = pmix_pmdl_base_select())) {
+        fprintf(stderr, "pmdl select failed\n");
+        return ret;
+    }
+    /* now allow the programming models to deal with any envars
+     * that need translating to PMIx. Some models specify things
+     * using their own prefixed envars, but want those specifications
+     * to carry over to a PMIx-related behavior.
+     */
+    ret = pmix_pmdl.process_envars(info, ninfo);
+    if (PMIX_SUCCESS != ret) {
+        fprintf(stderr, "pmdl process_envars failed\n");
+        return ret;
+    }
+
+    /* register params for pmix */
+    if (PMIX_SUCCESS != (ret = pmix_register_params())) {
+        fprintf(stderr, "pmix_register_params failed\n");
         return ret;
     }
 

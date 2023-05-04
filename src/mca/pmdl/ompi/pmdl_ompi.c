@@ -57,6 +57,8 @@ static void ompi_finalize(void);
 static pmix_status_t harvest_envars(pmix_namespace_t *nptr,
                                     const pmix_info_t info[], size_t ninfo,
                                     pmix_list_t *ilist, char ***priors);
+static pmix_status_t process_envars(const pmix_info_t info[],
+                                    size_t ninfo);
 static void parse_file_envars(pmix_list_t *ilist);
 static pmix_status_t setup_nspace(pmix_namespace_t *nptr, pmix_info_t *info);
 static pmix_status_t setup_nspace_kv(pmix_namespace_t *nptr, pmix_kval_t *kv);
@@ -68,6 +70,7 @@ pmix_pmdl_module_t pmix_pmdl_ompi_module = {
     .name = "ompi",
     .init = ompi_init,
     .finalize = ompi_finalize,
+    .process_envars = process_envars,
     .harvest_envars = harvest_envars,
     .parse_file_envars = parse_file_envars,
     .setup_nspace = setup_nspace,
@@ -455,6 +458,28 @@ static void setup_ompi_frameworks(void)
     if (NULL != tmp) {
         ompi_frameworks = tmp;
     }
+}
+
+static pmix_status_t process_envars(const pmix_info_t info[],
+                                    size_t ninfo)
+{
+    size_t n;
+
+    if (NULL != getenv("OPAL_PMIX_ENVARS_CONVERTED")) {
+        return PMIX_SUCCESS;
+    }
+
+    for (n=0; NULL != environ[n]; n++) {
+        if (0 == strncmp(environ[n], "OMPI_MCA_", strlen("OMPI_MCA_"))) {
+            str = &environ[strlen("OMPI_MCA_")];
+            for (p=0; NULL != pmix_framework_names[p]; p++) {
+                if (0 == strncmp(str, pmix_framework_names[p], strlen(pmix_framework_names[p]))) {
+                    pmix_output(0, "FOUND %s", environ[n]);
+                }
+            }
+        }
+    }
+    return PMIX_SUCCESS;
 }
 
 static void parse_file_envars(pmix_list_t *ilist)
