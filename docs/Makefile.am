@@ -35,11 +35,14 @@ SPHINX_OPTS       ?= -W --keep-going -j auto
 # files here using wildcards (vs. listing every single .rst file).
 # However, it is necessary to list $(srcdir) when using wildcards.
 TEXT_SOURCE_FILES = # if you have any .txt files, list them here
-IMAGE_SOURCE_FILES = # if you have any, list them here
+IMAGE_SOURCE_FILES = \
+		$(srcdir)/images/*.png
+
 RST_SOURCE_FILES   = \
         $(srcdir)/*.rst \
         $(srcdir)/building-apps/*.rst \
         $(srcdir)/developers/*.rst \
+        $(srcdir)/how-things-work/*.rst \
         $(srcdir)/installing-pmix/*.rst \
         $(srcdir)/installing-pmix/configure-cli-options/*.rst \
         $(srcdir)/man/*.rst \
@@ -122,6 +125,8 @@ $(ALL_MAN_BUILT): $(TEXT_SOURCE_FILES) $(SPHINX_CONFIG)
 # Use one of the man pages as a sentinel file to indicate whether all
 # the HTML docs and man pages have been built.
 $(ALL_MAN_BUILT):
+	$(MKDIR_P) $(OUTDIR)/html/images
+	find images -type f -exec $(INSTALL_DATA) {} $(OUTDIR)/html/images \;
 	$(PMIX_V_SPHINX_HTML) $(SPHINX_BUILD) -M html "$(srcdir)" "$(OUTDIR)" $(SPHINX_OPTS)
 	$(PMIX_V_SPHINX_MAN) $(SPHINX_BUILD) -M man "$(srcdir)" "$(OUTDIR)" $(SPHINX_OPTS)
 
