@@ -34,6 +34,7 @@
 
 #include "src/class/pmix_list.h"
 #include "src/class/pmix_pointer_array.h"
+#include "src/include/pmix_frameworks.h"
 #include "src/include/pmix_globals.h"
 #include "src/include/pmix_socket_errno.h"
 #include "src/mca/base/pmix_mca_base_var.h"
@@ -463,19 +464,110 @@ static void setup_ompi_frameworks(void)
 static pmix_status_t process_envars(const pmix_info_t info[],
                                     size_t ninfo)
 {
-    size_t n;
+    size_t n, p;
+    pmix_mca_base_var_file_value_t *fv;
+    char *str, *name, *val;
+    bool processed;
+    PMIX_HIDE_UNUSED_PARAMS(info, ninfo);
 
     if (NULL != getenv("OPAL_PMIX_ENVARS_CONVERTED")) {
         return PMIX_SUCCESS;
     }
 
+    // scan the environment for values directed at PMIx
+    // frameworks/components
     for (n=0; NULL != environ[n]; n++) {
         if (0 == strncmp(environ[n], "OMPI_MCA_", strlen("OMPI_MCA_"))) {
-            str = &environ[strlen("OMPI_MCA_")];
+            str = strdup(environ[n]);
+            name = &str[strlen("OMPI_MCA_")];
+            val = strchr(str, '=');
+            *val = '\0';
+            ++val;
+            processed = false;
             for (p=0; NULL != pmix_framework_names[p]; p++) {
-                if (0 == strncmp(str, pmix_framework_names[p], strlen(pmix_framework_names[p]))) {
-                    pmix_output(0, "FOUND %s", environ[n]);
+                if (0 == strncmp(name, pmix_framework_names[p], strlen(pmix_framework_names[p]))) {
+                    fv = PMIX_NEW(pmix_mca_base_var_file_value_t);
+                    if (NULL == fv) {
+                        free(str);
+                        return PMIX_ERR_OUT_OF_RESOURCE;
+                    }
+                    pmix_asprintf(&fv->mbvfv_var, "PMIX_MCA_%s", name);
+                    fv->mbvfv_value = strdup(val);
+                    pmix_list_append(&myenvars, &fv->super);
+                    processed = true;
+                    free(str);
+                    break;
                 }
+            }
+            if (processed) {
+                continue;
+            }
+            // there are some legacy OMPI params that transfer to PMIx
+            if (0 == strncmp(name, "mca_base_", strlen("mca_base_"))) {
+                fv = PMIX_NEW(pmix_mca_base_var_file_value_t);
+                if (NULL == fv) {
+                    free(str);
+                    return PMIX_ERR_OUT_OF_RESOURCE;
+                }
+                pmix_asprintf(&fv->mbvfv_var, "PMIX_MCA_%s", name);
+                fv->mbvfv_value = strdup(val);
+                pmix_list_append(&myenvars, &fv->super);
+                free(str);
+                continue;
+            }
+            /* if this refers to the "if" framework, convert to "pif" */
+            if (0 == strncasecmp(name, "if", 2)) {
+                fv = PMIX_NEW(pmix_mca_base_var_file_value_t);
+                if (NULL == fv) {
+                    free(str);
+                    return PMIX_ERR_OUT_OF_RESOURCE;
+                }
+                if (0 == strcmp(name, "if")) {
+                    // just the raw framework var
+                    fv->mbvfv_var = strdup("PMIX_MCA_pif");
+                } else {
+                    pmix_asprintf(&fv->mbvfv_var, "PMIX_MCA_pif_%s", &name[3]);
+                }
+                fv->mbvfv_value = strdup(val);
+                pmix_list_append(&myenvars, &fv->super);
+                free(str);
+                continue;
+            }
+            // check the "reachable" framework
+            if (0 == strncasecmp(name, "reachable", strlen("reachable"))) {
+                fv = PMIX_NEW(pmix_mca_base_var_file_value_t);
+                if (NULL == fv) {
+                    free(str);
+                    return PMIX_ERR_OUT_OF_RESOURCE;
+                }
+                if (0 == strcmp(name, "reachable")) {
+                    // just the raw framework var
+                    fv->mbvfv_var = strdup("PMIX_MCA_preachable");
+                } else {
+                    pmix_asprintf(&fv->mbvfv_var, "PMIX_MCA_preachable_%s", &name[strlen("reachable_")]);
+                }
+                fv->mbvfv_value = strdup(val);
+                pmix_list_append(&myenvars, &fv->super);
+                free(str);
+                continue;
+            }
+            // check the "dl" framework
+            if (0 == strncasecmp(name, "dl", strlen("dl"))) {
+                fv = PMIX_NEW(pmix_mca_base_var_file_value_t);
+                if (NULL == fv) {
+                    free(str);
+                    return PMIX_ERR_OUT_OF_RESOURCE;
+                }
+                if (0 == strcmp(name, "dl")) {
+                    // just the raw framework var
+                    fv->mbvfv_var = strdup("PMIX_MCA_pdl");
+                } else {
+                    pmix_asprintf(&fv->mbvfv_var, "PMIX_MCA_pdl_%s", &name[3]);
+                }
+                fv->mbvfv_value = strdup(val);
+                pmix_list_append(&myenvars, &fv->super);
+                free(str);
+                continue;
             }
         }
     }
@@ -828,6 +920,7 @@ static pmix_status_t setup_fork(const pmix_proc_t *proc, char ***env, char ***pr
     pmix_info_t info[2];
     uint32_t n;
     pmix_cb_t cb;
+    pmix_mca_base_var_file_value_t *fv;
 
     pmix_output_verbose(2, pmix_pmdl_base_framework.framework_output,
                         "pmdl:ompi: setup fork for %s", PMIX_NAME_PRINT(proc));
@@ -1164,8 +1257,8 @@ static pmix_status_t setup_fork(const pmix_proc_t *proc, char ***env, char ***pr
     PMIX_DESTRUCT(&cb);
 
     /* add any envars we collected from param files */
-    PMIX_LIST_FOREACH(kv, &myenvars, pmix_kval_t) {
-        PMIx_Setenv(kv->value->data.envar.envar, kv->value->data.envar.value, true, env);
+    PMIX_LIST_FOREACH(fv, &myenvars, pmix_mca_base_var_file_value_t) {
+        PMIx_Setenv(fv->mbvfv_var, fv->mbvfv_value, true, env);
     }
 
     return PMIX_SUCCESS;
