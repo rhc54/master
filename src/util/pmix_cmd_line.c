@@ -119,6 +119,8 @@ int pmix_cmd_line_parse(char **pargv, char *shorts,
 
     if (1 == argc) {
         // nothing to parse
+        pmix_output(0, "NOTHING TO PARSE");
+        results->tail = PMIx_Argv_copy(&argv[0]);
         goto done;
     }
 
@@ -259,6 +261,7 @@ int pmix_cmd_line_parse(char **pargv, char *shorts,
                 free(str);
                 break;
             default:
+                pmix_output(0, "DEFAULT: OPTIND %d ARGV: %s", optind, argv[optind]);
                 found = false;
                 for (n=0; '\0' != shorts[n]; n++) {
                     int ascii = shorts[n];
@@ -344,8 +347,9 @@ int pmix_cmd_line_parse(char **pargv, char *shorts,
                         PMIx_Argv_free(argv);
                         return PMIX_ERR_SILENT;
                     }
-                }
+                }  // opt = ascii
                 if (found) {
+                    pmix_output(0, "NOT FOUND 2");
                     break;
                 }
                 /* see if the option is in the list - if it is, then it is a
@@ -371,6 +375,8 @@ int pmix_cmd_line_parse(char **pargv, char *shorts,
                 if (0 == strcmp(argv[optind-1], "--")) {
                     // double-dash indicates separator between launcher
                     // directives and the application
+                    pmix_output(0, "DDASH 2 ARGV %s OPTIND %d ARGC %d", argv[optind], optind, argc);
+                  //  results->tail = PMIx_Argv_copy(&argv[optind]);
                     goto done;
                 }
                 if (1 == optind) {
@@ -389,11 +395,13 @@ int pmix_cmd_line_parse(char **pargv, char *shorts,
     }
 
 done:
-    if (optind < argc) {
+    if (0 != optind && optind < argc) {
         /* if this is an '&', it simply indicates that the executable
          * was being pushed into the background - ignore it */
         if (0 != strcmp(argv[optind], "&")) {
+            pmix_output(0, "COPYING");
             results->tail = PMIx_Argv_copy(&argv[optind]);
+            PMIX_CLI_DEBUG_LIST(results);
         }
     }
     PMIx_Argv_free(argv);
