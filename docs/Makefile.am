@@ -50,7 +50,8 @@ RST_SOURCE_FILES   = \
         $(srcdir)/man/man3/*.rst \
         $(srcdir)/man/man5/*.rst \
         $(srcdir)/news/*.rst \
-        $(srcdir)/release-notes/*.rst
+        $(srcdir)/release-notes/*.rst \
+        $(srcdir)/vendors/*.rst
 
 
 EXTRA_DIST         = \

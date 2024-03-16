@@ -44,7 +44,7 @@ Table of contents
 =================
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 3
    :numbered:
 
    quickstart
@@ -59,6 +59,7 @@ Table of contents
    mca
    building-apps/index
    developers/index
+   vendors/index
    contributing
    license
    security
