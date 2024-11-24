@@ -174,12 +174,7 @@ typedef struct {
     pmix_info_t *info;
     size_t ninfo;
     grp_block_t *blk;
-    union {
-        pmix_release_cbfunc_t relfn;
-        pmix_op_cbfunc_t opcbfn;
-        pmix_modex_cbfunc_t modexcbfunc;
-        pmix_info_cbfunc_t infocbfunc;
-    } cbfunc;
+    pmix_release_cbfunc_t relfn;
     void *cbdata;
 } grp_shifter_t;
 static void scon(grp_shifter_t *p)
@@ -188,7 +183,7 @@ static void scon(grp_shifter_t *p)
     p->info = NULL;
     p->ninfo = 0;
     p->blk = NULL;
-    p->cbfunc.relfn = NULL;
+    p->relfn = NULL;
     p->cbdata = NULL;
 }
 static void sdes(grp_shifter_t *p)
@@ -467,8 +462,8 @@ static void _grpcbfunc(int sd, short args, void *cbdata)
     if (NULL == blk) {
         /* give them a release if they want it - this should
          * never happen, but protect against the possibility */
-        if (NULL != scd->cbfunc.relfn) {
-            scd->cbfunc.relfn(scd->cbdata);
+        if (NULL != scd->relfn) {
+            scd->relfn(scd->cbdata);
         }
         PMIX_RELEASE(scd);
         return;
@@ -557,8 +552,8 @@ static void _grpcbfunc(int sd, short args, void *cbdata)
     PMIX_RELEASE(blk);
 
     /* we are done */
-    if (NULL != scd->cbfunc.relfn) {
-        scd->cbfunc.relfn(scd->cbdata);
+    if (NULL != scd->relfn) {
+        scd->relfn(scd->cbdata);
     }
     PMIX_RELEASE(scd);
 }
@@ -594,7 +589,7 @@ static void grpcbfunc(pmix_status_t status,
     scd->info = info;
     scd->ninfo = ninfo;
     scd->blk = blk;
-    scd->cbfunc.relfn = relfn;
+    scd->relfn = relfn;
     scd->cbdata = relcbd;
     PMIX_THREADSHIFT(scd, _grpcbfunc);
 }
@@ -806,7 +801,8 @@ pmix_status_t pmix_server_grpconstruct(pmix_server_caddy_t *cd, pmix_buffer_t *b
     pmix_info_caddy_t *ncd;
     pmix_namespace_t *nptr, *ns;
 
-    pmix_output_verbose(2, pmix_server_globals.group_output,
+ //   pmix_output_verbose(2, pmix_server_globals.group_output,
+    pmix_output(0,
                         "recvd grpconstruct cmd from %s",
                         PMIX_PEER_PRINT(cd->peer));
 
@@ -837,6 +833,7 @@ pmix_status_t pmix_server_grpconstruct(pmix_server_caddy_t *cd, pmix_buffer_t *b
         goto error;
     }
     if (0 < nprocs) {
+        pmix_output(0, "LEADER");
         PMIX_PROC_CREATE(procs, nprocs);
         if (NULL == procs) {
             rc = PMIX_ERR_NOMEM;
@@ -851,6 +848,7 @@ pmix_status_t pmix_server_grpconstruct(pmix_server_caddy_t *cd, pmix_buffer_t *b
         }
     } else {
         // this process is participating as an "add-member"
+        pmix_output(0, "ADD-MEMBER");
         bootstrap = true;
     }
 
@@ -883,9 +881,7 @@ pmix_status_t pmix_server_grpconstruct(pmix_server_caddy_t *cd, pmix_buffer_t *b
             force_local = PMIX_INFO_TRUE(&info[n]);
 
         } else if (PMIX_CHECK_KEY(&info[n], PMIX_GROUP_BOOTSTRAP)) {
-            // ignore the actual value - we just need to know it
-            // is present
-            bootstrap = true;
+            bootstrap = PMIX_INFO_TRUE(&info[n]);
 
         } else if (PMIX_CHECK_KEY(&info[n], PMIX_TIMEOUT)) {
             PMIX_VALUE_GET_NUMBER(rc, &info[n].value, tv.tv_sec, uint32_t);
@@ -898,7 +894,7 @@ pmix_status_t pmix_server_grpconstruct(pmix_server_caddy_t *cd, pmix_buffer_t *b
 
         }
     }
-
+pmix_output(0, "GRP %s CTX %s", grpid, need_cxtid ? "T" : "F");
     if (NULL == procs) {
         // this is a group member participating as an "add-member".
         // check if our host supports group operations
@@ -928,6 +924,7 @@ pmix_status_t pmix_server_grpconstruct(pmix_server_caddy_t *cd, pmix_buffer_t *b
     /* find/create the local tracker for this operation */
     rc = get_tracker(grpid, bootstrap, procs, nprocs,
                      info, ninfo, &blk, &trk);
+    pmix_output(0, "TRK %s", trk->pcs[0].nspace);
     if (PMIX_EXISTS == rc) {
         // we extended the trk's info array
         PMIX_INFO_FREE(info, ninfo);
@@ -1087,6 +1084,7 @@ pmix_status_t pmix_server_grpconstruct(pmix_server_caddy_t *cd, pmix_buffer_t *b
                 info = NULL;
                 ninfo = 0;
             }
+            pmix_output(0, "LOCAL UPCALL");
             rc = pmix_host_server.group(PMIX_GROUP_CONSTRUCT, blk->id, trk->pcs, trk->npcs,
                                         trk->info, trk->ninfo, grpcbfunc, blk);
             PMIX_ERROR_LOG(rc);
@@ -1125,9 +1123,10 @@ proceed:
         PMIX_RELEASE(blk);
         return PMIX_ERR_NOT_SUPPORTED;
     }
-
+pmix_output(0, "UPCALL");
     rc = pmix_host_server.group(PMIX_GROUP_CONSTRUCT, blk->id, trk->pcs, trk->npcs,
                                 trk->info, trk->ninfo, grpcbfunc, blk);
+    pmix_output(0, "UPCALL RETURNED %s", PMIx_Error_string(rc));
     if (PMIX_SUCCESS != rc) {
         if (PMIX_OPERATION_SUCCEEDED == rc) {
             /* let the grpcbfunc threadshift the result */
@@ -1169,7 +1168,8 @@ pmix_status_t pmix_server_grpdestruct(pmix_server_caddy_t *cd, pmix_buffer_t *bu
     pmix_peer_t *pr;
     struct timeval tv = {0, 0};
 
-    pmix_output_verbose(2, pmix_server_globals.group_output,
+  //  pmix_output_verbose(2, pmix_server_globals.group_output,
+    pmix_output(0,
                         "recvd grpdestruct cmd");
 
     /* unpack the group ID */
