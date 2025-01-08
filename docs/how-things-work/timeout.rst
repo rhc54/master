@@ -4,7 +4,7 @@ Handling Timeouts
 
 PMIx includes several collective operations (e.g., ``PMIx_Fence``, ``PMIx_Connect``, and ``PMIx_Group_construct``). Given that these are operations that require multiple processes to call the API before the operation can complete, there is always the potential that one or more processes will fail to participate - e.g., a process might hang in some intermediate step prior to reaching the point where the API would be called. This can result in an application blocking, thereby consuming the rest of its allocation time without performing any work.
 
-PMIx provides a ``PMIX_TIMEOUT`` attribute to help protect against such errors. The intent of the attribute is to allow an application to specify the maximum time the requested operation should take - if the operation has not completed within the specified time limit, then PMIx is expected to terminate the operation and return a ``PMIX_ERR_TIMEOUT`` status.
+PMIx provides a ``PMIX_TIMEOUT`` attribute to help protect against such errors. The intent of the attribute is to allow an application to specify the maximum time the requested operation should take - if the operation has not completed within the specified time limit, then PMIx is expected to terminate the operation and return a ``PMIX_ERR_TIMEOUT`` status to all participants.
 
 Adding a timeout capability to a distributed operation inherently creates race conditions and raises questions over where and how the timeout is being monitored. Options for the latter include monitoring:
 
@@ -22,6 +22,10 @@ This document will discuss some of the scenarios that highlight the challenges o
 .. note:: The PMIx Standard does not specify that all processes *must* pass the ``PMIX_TIMEOUT`` attribute collectively, or if individual processes may or may not pass it for the same operation. It also does not specify if the timeout values must be the same or can vary by process - and if the latter, then which value(s) are to be used. It does, however, require that timeout of the operation be a *global* result - i.e., that the entire operation must return a ``PMIX_ERR_TIMEOUT`` result to all participants if a timeout occurs.
 
           For the purposes of this discussion, we will assume the most flexible interpretation of the Standard. Thus, we will assume that some, but not all, participants provide a ``PMIX_TIMEOUT`` attribute, and that the timeout value may be unique to each participant that passes it. We will also assume that processes A and B are executing under the same PMIx server, while process C is a client of a different server.
+
+When considering timeout, it is important to remember that the PMIx server library consolidates operations before passing them to the host. In the example used here, the local PMIx server will wait for both processes A and B to participate *before* it passes that operation upwards to the host. Thus, the host remains unaware of the operation until those two processes have participated.
+
+This raises the problem of local completion. If one of the processes (let's use B here) fails to participate, then the host will be unaware of the problem - the server will never pass the operation to the host. Similar issues arise if B is delayed beyond A's timeout limit, depending on which level (client, server, or host) is handling the timeout.
 
 
 Scenario 1: Incomplete
@@ -47,11 +51,11 @@ Scenario 2: Late
 
 In this scenario, processes A and B call `PMIx_Connect`` in some time window that fits within their specified limits. However, process C (for whatever reason) calls the API *after* process A's and process B's time limit expires - i.e., both processes A and B have reached their specified timeout limit prior to C calling the API.
 
-First, consider the case where timeout is locally monitored by the PMIx client. Processes A and B have already timed out, and process C will time out of the requested operation if it eventually does call the API. The only issue here is that the host and local PMIx servers will have been told of the operation, and therefore need to be notified of the cancellation. Accordingly, the PMIx client library in this case is required to notify its server of the timeout, and the server must subsequently upcall its host to notify it as well. 
+First, consider the case where timeout is locally monitored by the PMIx client. Processes A and B have already timed out, and process C will time out of the requested operation if it eventually does call the API. The only issue here is that the host and local PMIx servers will have been told of the operation, and therefore need to be notified of the cancellation. Accordingly, the PMIx client library in this case is required to notify its server of the timeout, and the server must subsequently upcall its host to notify it as well.
 
-A similar situation emerges in the case where timeout is monitored by the PMIx server. 
+A similar situation emerges in the case where timeout is monitored by the PMIx server.
 
-Monitoring by the host relieves the race condition by putting timeout detection in a centralized location. 
+Monitoring by the host relieves the race condition by putting timeout detection in a centralized location.
 
 
  if it is being locally monitored (i.e., in the client itself). However, the host and/or the local PMIx server can be left in an uncertain state as they have no way of telling that the operation requested by C equates to the failed operation requested by A and B - e.g., it could be that the three processes are initiating a new ``PMIx_Connect`` operation across the three processes. Thus, the host and/or local PMIx server can be left with "dangling" operations waiting for completion, or can confuse process contributions from "old" operations with those from "new" operations.
